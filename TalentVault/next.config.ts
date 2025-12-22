@@ -7,11 +7,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/(.*)", // Apply to all routes
         headers: [
           {
             key: "Content-Security-Policy",
-            value: `font-src 'self' *.vercel.com *.gstatic.com vercel.live r2cdn.perplexity.ai;` // Added r2cdn.perplexity.ai
+            value: `default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' *.vercel.com *.gstatic.com vercel.live r2cdn.perplexity.ai; connect-src 'self';` // More comprehensive CSP
           },
         ],
       },
