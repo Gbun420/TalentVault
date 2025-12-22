@@ -1,1 +1,33 @@
-malta-cv/
+# Dependency directories
+node_modules
+TalentVault/node_modules/
+
+# Next.js build output
+.next/
+TalentVault/.next/
+
+# Environment variables
+.env*.local
+.env
+.env.production
+TalentVault/.env*.local
+TalentVault/.env
+TalentVault/.env.production
+
+# macOS specific files
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime files
+.pnpm-store
+
+# Other
+coverage
+*.log
+*.pnp.js
+.eslintcache
