@@ -27,7 +27,11 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${env.siteUrl}/auth/callback?role=${encodeURIComponent(role)}&full_name=${encodeURIComponent(full_name)}`, // Use SITE_URL and pass role and full_name
+        emailRedirectTo: undefined, // Don't send magic link, just confirmation email
+        data: {
+          full_name: full_name,
+          role: role,
+        },
       },
     });
 

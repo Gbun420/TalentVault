@@ -8,14 +8,17 @@ import { env } from "@/lib/env";
 export default async function AuthCallbackPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
   const code = searchParams.code as string;
   const next = searchParams.next as string || "/";
-  const role = searchParams.role as AppRole || "jobseeker";
-  const full_name = searchParams.full_name as string || "";
 
   if (code) {
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
+      // Get user metadata from the signup
+      const userMetadata = data.user.user_metadata || {};
+      const role = userMetadata.role as AppRole || "jobseeker";
+      const full_name = userMetadata.full_name as string || "";
+
       // After successful session, insert profile
       // Check if profile already exists to prevent duplicate inserts on refresh
       const { data: existingProfile, error: fetchProfileError } = await supabase

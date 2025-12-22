@@ -15,6 +15,12 @@ export async function middleware(req: NextRequest) {
     const res = NextResponse.next();
     const path = req.nextUrl.pathname;
 
+    // Add CSP headers to allow Next.js inline scripts
+    res.headers.set(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://vercel.live;"
+    );
+
     // Skip static and public assets
     if (path.startsWith("/_next") || path.startsWith("/api/webhooks") || path.includes(".")) {
       return res;
