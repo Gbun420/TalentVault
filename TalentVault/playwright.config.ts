@@ -11,10 +11,6 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    // Add E2E auth bypass environment variable
-    env: {
-      NEXT_PUBLIC_E2E_AUTH_BYPASS: "true"
-    }
   },
   projects: [
     {

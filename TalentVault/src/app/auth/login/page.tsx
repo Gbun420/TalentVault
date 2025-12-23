@@ -1,17 +1,16 @@
 "use client";
 
-import { FormEvent, Suspense, useMemo, useState, useEffect } from "react";
+import { FormEvent, Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
-import { AppRole } from "@/lib/auth-constants";
+import { AppRole, roleHome } from "@/lib/auth-constants";
 import { env } from "@/lib/env"; // Import the env object
 import {
   signInWithEmailAndPassword,
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
-  onAuthStateChanged,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; // For fetching roles from Firestore
 
@@ -178,5 +177,13 @@ function LoginForm() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
