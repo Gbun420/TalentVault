@@ -1,4 +1,6 @@
-import { createSupabaseClient } from "./supabase/client";
+import { auth, db } from "./firebase"; // Import Firebase client-side auth and db
+import { getDoc, doc } from "firebase/firestore"; // Import Firestore functions
+import { User } from "firebase/auth"; // Import Firebase User type
 
 export type AppRole = "jobseeker" | "employer" | "admin";
 
@@ -7,37 +9,47 @@ export type SessionProfile = {
   email: string;
   full_name: string;
   role: AppRole;
+  emailVerified: boolean; // Add emailVerified as it's part of Firebase User
 };
 
 export async function getClientSessionProfile(): Promise<{
   userId: string | null;
   profile: SessionProfile | null;
 }> {
-  const supabase = createSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  return new Promise((resolve) => {
+    // Firebase onAuthStateChanged is asynchronous
+    const unsubscribe = auth.onAuthStateChanged(async (user: User | null) => {
+      unsubscribe(); // Unsubscribe after first call
 
-  if (!user) {
-    return { userId: null, profile: null };
-  }
+      if (!user) {
+        resolve({ userId: null, profile: null });
+        return;
+      }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
+      try {
+        const profileDoc = await getDoc(doc(db, "profiles", user.uid));
 
-  if (!profile) {
-    return {
-      userId: user.id,
-      profile: null,
-    };
-  }
+        if (!profileDoc.exists()) {
+          resolve({
+            userId: user.uid,
+            profile: null,
+          });
+          return;
+        }
 
-  return {
-    userId: user.id,
-    profile: profile as SessionProfile,
-  };
+        const profileData = profileDoc.data();
+        const profile: SessionProfile = {
+          id: user.uid,
+          email: user.email || "",
+          full_name: profileData?.full_name || "",
+          role: profileData?.role as AppRole,
+          emailVerified: user.emailVerified,
+        };
+        resolve({ userId: user.uid, profile });
+      } catch (error) {
+        console.error("Error getting client session profile:", error);
+        resolve({ userId: null, profile: null });
+      }
+    });
+  });
 }

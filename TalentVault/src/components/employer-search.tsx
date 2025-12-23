@@ -137,9 +137,13 @@ export default function EmployerSearch() {
         }
       }
 
+      // Add constraints for moderation_status and visibility
+      constraints.push(where("moderation_status", "==", "approved"));
+      constraints.push(where("visibility", "in", ["public", "employers_only"]));
       constraints.push(limit(50));
       
-      const q = query(collection(db, "public_profile_directory"), ...constraints);
+      // For Firestore: "public_profile_directory" maps to "jobseeker_profiles" collection
+      const q = query(collection(db, "jobseeker_profiles"), ...constraints); // Changed collection name
       const snapshot = await getDocs(q);
       const profiles = snapshot.docs.map(doc => ({
         id: doc.id,

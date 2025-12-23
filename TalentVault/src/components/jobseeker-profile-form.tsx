@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { z } from "zod";
-import React from "react";
-import { auth } from "@/lib/firebase";
-import { doc, setDoc, updateDoc, deleteDoc, collection, addDoc, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase"; // Import Firebase services
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage functions
+import { collection, doc, setDoc, updateDoc, deleteDoc, getDocs, query, where, addDoc } from "firebase/firestore"; // Firestore functions
 
 const experienceSchema = z.object({
   id: z.string().optional(),
@@ -95,8 +94,113 @@ export default function JobseekerProfileForm({
     setSaving(true);
     setError(null);
     setMessage(null);
-    setSaving(false);
-    setMessage("Profile saved successfully.");
+
+    const form = new FormData(e.currentTarget);
+    const payload = {
+      full_name: String(form.get("full_name") || "").trim(),
+      headline: String(form.get("headline") || "").trim(),
+      summary: String(form.get("summary") || "").trim(),
+      availability: String(form.get("availability") || "").trim(),
+      location: String(form.get("location") || "").trim(),
+      years_experience: form.get("years_experience")
+        ? Number(form.get("years_experience"))
+        : undefined,
+      work_permit_status: String(form.get("work_permit_status") || "").trim() || undefined,
+      salary_expectation_eur: form.get("salary_expectation_eur")
+        ? Number(form.get("salary" + "_expectation_eur"))
+        : undefined,
+      visibility: form.get("visibility") as "public" | "employers_only" | "hidden",
+      contact_email: String(form.get("contact_email") || "").trim(),
+      phone: String(form.get("phone") || "").trim() || undefined,
+      skills,
+      experiences,
+    };
+
+    const parsed = profileSchema.safeParse(payload);
+    if (!parsed.success) {
+      setSaving(false);
+      const message = parsed.error.issues?.[0]?.message || "Please fix the highlighted issues.";
+      setError(message);
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      setSaving(false);
+      setError("You must be signed in.");
+      return;
+    }
+
+    let profilePath = initialContact?.profile_storage_path || null;
+    try {
+      if (profileFile) {
+        if (profileFile.type !== "application/pdf") {
+          setSaving(false);
+          setError("Profile must be a PDF file.");
+          return;
+        }
+        const storageRef = ref(storage, `profile-files/${user.uid}/${profileFile.name}`);
+        const uploadTask = await uploadBytes(storageRef, profileFile);
+        profilePath = await getDownloadURL(uploadTask.ref);
+      }
+
+      await setDoc(doc(db, "jobseeker_profiles", userId), {
+        headline: payload.headline,
+        summary: payload.summary,
+        skills: payload.skills,
+        availability: payload.availability,
+        location: payload.location,
+        years_experience: payload.years_experience,
+        visibility: payload.visibility,
+        work_permit_status: payload.work_permit_status,
+        salary_expectation_eur: payload.salary_expectation_eur,
+        updated_at: new Date().toISOString(),
+      }, { merge: true });
+
+      await setDoc(doc(db, "jobseeker_contacts", userId), {
+        contact_email: payload.contact_email,
+        phone: payload.phone,
+        profile_storage_path: profilePath,
+        updated_at: new Date().toISOString(),
+      }, { merge: true });
+
+      await updateDoc(doc(db, "profiles", userId), {
+        full_name: payload.full_name,
+        location: payload.location,
+        updated_at: new Date().toISOString(),
+      });
+
+      // Replace work experiences
+      // First, delete existing experiences
+      const existingExperiencesQuery = query(collection(db, "profiles", userId, "experiences")); // Subcollection
+      const existingExperiences = await getDocs(existingExperiencesQuery);
+      
+      const deletePromises = existingExperiences.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      if (payload.experiences && payload.experiences.length > 0) {
+        const insertPromises = payload.experiences.map(exp => 
+          addDoc(collection(db, "profiles", userId, "experiences"), { // Subcollection
+            title: exp.title,
+            company: exp.company,
+            start_date: exp.start_date,
+            end_date: exp.is_current ? null : exp.end_date || null,
+            is_current: Boolean(exp.is_current),
+            location: exp.location,
+            description: exp.description,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+        );
+        await Promise.all(insertPromises);
+      }
+
+      setMessage("Profile saved successfully.");
+    } catch (firebaseError: any) {
+      setError(firebaseError.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -627,5 +731,4 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </label>
   );
-}
 }

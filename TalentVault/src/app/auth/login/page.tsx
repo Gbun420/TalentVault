@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
-import { roleHome, AppRole } from "@/lib/auth-constants";
+import { AppRole } from "@/lib/auth-constants";
 import { env } from "@/lib/env"; // Import the env object
 import {
   signInWithEmailAndPassword,
@@ -178,13 +178,5 @@ function LoginForm() {
         </p>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <LoginForm />
-    </Suspense>
   );
 }

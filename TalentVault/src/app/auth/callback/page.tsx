@@ -21,14 +21,16 @@ export default async function AuthCallbackPage({ searchParams }: { searchParams:
         // Verify email and sign in the user
         const userCredential = await authAdmin.verifyAndProcessEmailAction(oobCode);
         const user = userCredential.user;
+
+        if (user) { // ADDED IF BLOCK
           // Ensure profile exists in Firestore (from signup) or create it if not
-          const profileRef = dbAdmin.collection("profiles").doc(userRecord.uid);
+          const profileRef = dbAdmin.collection("profiles").doc(user.uid); // Use 'user.uid'
           const profileSnap = await profileRef.get();
 
           if (!profileSnap.exists) {
             await profileRef.set({
-              full_name: fullNameFromSignup || userRecord.displayName || userRecord.email,
-              email: userRecord.email,
+              full_name: fullNameFromSignup || user.displayName || user.email,
+              email: user.email,
               role: roleFromSignup,
               createdAt: new Date().toISOString(),
               emailVerified: true,
@@ -42,7 +44,7 @@ export default async function AuthCallbackPage({ searchParams }: { searchParams:
           const sessionCookie = await authAdmin.createSessionCookie(oobCode, { expiresIn: 60 * 60 * 24 * 5 * 1000 }); // 5 days
           
           // Set the session cookie
-          const cookieStore = await cookies();
+          const cookieStore = cookies();
           cookieStore.set('__session', sessionCookie, {
             httpOnly: true,
             secure: true,
@@ -53,7 +55,7 @@ export default async function AuthCallbackPage({ searchParams }: { searchParams:
           
           // Redirect to role-specific homepage
           redirect(roleHome[roleFromSignup] || "/");
-        }
+        } // CLOSING BRACE FOR IF BLOCK
         break;
       }
       case "signIn": {
