@@ -29,16 +29,24 @@ function LoginForm() {
     err instanceof Error ? err.message : "Something went wrong";
 
   const handleRedirect = useCallback(async (userId: string) => {
+    console.log('handleRedirect called with userId:', userId);
     // Fetch role from Firestore
     const docRef = doc(db, "profiles", userId);
     const docSnap = await getDoc(docRef);
+
+    console.log('docSnap.exists():', docSnap.exists());
+    if (docSnap.exists()) {
+      console.log('docSnap.data():', docSnap.data());
+    }
 
     let role: AppRole | undefined;
     if (docSnap.exists()) {
       role = docSnap.data().role as AppRole;
     }
 
+    console.log('role:', role);
     const fallback = redirectTo || (role ? roleHome[role] : "/");
+    console.log('redirecting to:', role ? roleHome[role] : fallback);
     router.replace(role ? roleHome[role] : fallback);
   }, [redirectTo, router]);
 
