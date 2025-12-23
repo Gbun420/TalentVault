@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe"; // Changed import
+import { getStripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { dbAdmin } from "@/lib/firebase-admin";
 import Stripe from "stripe";
 
 function mapStatus(status: Stripe.Subscription.Status) {
@@ -20,21 +20,28 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const amount = session.amount_total ?? session.amount_subtotal ?? 0;
     const currency = session.currency ?? "eur";
 
-    await supabaseAdmin
-      .from("payments")
-      .update({
+    // Find and update the payment record
+    const paymentsQuery = await dbAdmin
+      .collection("payments")
+      .where("stripe_checkout_session_id", "==", session.id)
+      .limit(1)
+      .get();
+
+    if (!paymentsQuery.empty) {
+      await paymentsQuery.docs[0].ref.update({
         status: "succeeded",
         amount_cents: amount,
         currency,
         stripe_payment_intent_id: session.payment_intent?.toString() || null,
         stripe_checkout_session_id: session.id,
         updated_at: new Date().toISOString(),
-      })
-      .eq("stripe_checkout_session_id", session.id);
+      });
+    }
 
-    await supabaseAdmin.from("unlocked_contacts").upsert({
+    await dbAdmin.collection("unlocked_contacts").add({
       employer_id: employerId,
       jobseeker_id: jobseekerId,
+      created_at: new Date().toISOString(),
     });
     return;
   }
@@ -45,25 +52,33 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     if (!employerId || !planCode) return;
     const amount = session.amount_total ?? session.amount_subtotal ?? 0;
     const currency = session.currency ?? "eur";
-    await supabaseAdmin
-      .from("payments")
-      .update({
+    
+    // Find and update the payment record
+    const paymentsQuery = await dbAdmin
+      .collection("payments")
+      .where("stripe_checkout_session_id", "==", session.id)
+      .limit(1)
+      .get();
+
+    if (!paymentsQuery.empty) {
+      await paymentsQuery.docs[0].ref.update({
         status: "succeeded",
         amount_cents: amount,
         currency,
         stripe_payment_intent_id: session.payment_intent?.toString() || null,
         stripe_checkout_session_id: session.id,
         updated_at: new Date().toISOString(),
-      })
-      .eq("stripe_checkout_session_id", session.id);
+      });
+    }
 
-    await supabaseAdmin.from("employer_subscriptions").upsert({
+    await dbAdmin.collection("employer_subscriptions").add({
       employer_id: employerId,
       plan_code: planCode,
       stripe_customer_id: session.customer?.toString() || null,
       stripe_subscription_id: (session.subscription as string) || null,
       status: "active",
       updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     });
   }
 }
@@ -78,7 +93,16 @@ async function handleSubscriptionEvent(subscription: Stripe.Subscription) {
     cancel_at?: number;
     canceled_at?: number;
   };
-  await supabaseAdmin.from("employer_subscriptions").upsert({
+  
+  // Find existing subscription or create new one
+  const existingSubQuery = await dbAdmin
+    .collection("employer_subscriptions")
+    .where("employer_id", "==", employerId)
+    .where("stripe_subscription_id", "==", subscription.id)
+    .limit(1)
+    .get();
+
+  const subscriptionData = {
     employer_id: employerId,
     plan_code: planCode,
     stripe_customer_id: subscription.customer?.toString() || null,
@@ -95,7 +119,18 @@ async function handleSubscriptionEvent(subscription: Stripe.Subscription) {
       ? new Date(sub.canceled_at * 1000).toISOString()
       : null,
     updated_at: new Date().toISOString(),
-  });
+  };
+
+  if (existingSubQuery.empty) {
+    // Create new subscription
+    await dbAdmin.collection("employer_subscriptions").add({
+      ...subscriptionData,
+      created_at: new Date().toISOString(),
+    });
+  } else {
+    // Update existing subscription
+    await existingSubQuery.docs[0].ref.update(subscriptionData);
+  }
 }
 
 export async function POST(request: Request) {

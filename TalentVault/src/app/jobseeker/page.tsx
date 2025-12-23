@@ -1,30 +1,31 @@
 import { requireRole } from "@/lib/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { dbAdmin } from "@/lib/firebase-admin";
 import JobseekerProfileForm from "@/components/jobseeker-profile-form";
 
 export default async function JobseekerDashboard() {
   const profile = await requireRole("jobseeker", "/jobseeker");
-  const supabase = await createSupabaseServerClient();
 
-  const { data: jobseekerProfile } = await supabase
-    .from("jobseeker_profiles")
-    .select(
-      "headline, summary, skills, preferred_roles, years_experience, availability, location, visibility, work_permit_status, salary_expectation_eur"
-    )
-    .eq("id", profile.id)
-    .maybeSingle();
+  const [jobseekerProfileDoc, contactDoc, experiencesSnapshot] = await Promise.all([
+    dbAdmin.collection("jobseeker_profiles").doc(profile.id).get(),
+    dbAdmin.collection("jobseeker_contacts").doc(profile.id).get(),
+    dbAdmin.collection("work_experiences")
+      .where("jobseeker_id", "==", profile.id)
+      .orderBy("start_date", "desc")
+      .get()
+  ]);
 
-  const { data: contact } = await supabase
-    .from("jobseeker_contacts")
-    .select("contact_email, phone, profile_storage_path, profile_public_url")
-    .eq("jobseeker_id", profile.id)
-    .maybeSingle();
-
-  const { data: experiences } = await supabase
-    .from("work_experiences")
-    .select("id, title, company, start_date, end_date, is_current, location, description")
-    .eq("jobseeker_id", profile.id)
-    .order("start_date", { ascending: false });
+  const jobseekerProfile = jobseekerProfileDoc.exists ? jobseekerProfileDoc.data() : null;
+  const contact = contactDoc.exists ? contactDoc.data() : null;
+  const experiences = experiencesSnapshot.docs.map(doc => ({
+    id: doc.id,
+    title: doc.data().title || '',
+    company: doc.data().company || '',
+    start_date: doc.data().start_date || '',
+    end_date: doc.data().end_date || null,
+    is_current: doc.data().is_current || false,
+    location: doc.data().location || null,
+    description: doc.data().description || null,
+  }));
 
   return (
     <JobseekerProfileForm

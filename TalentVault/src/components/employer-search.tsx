@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { auth } from "@/lib/firebase";
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 type TalentVaultProfile = { // Renamed from CV
   id: string;
@@ -31,15 +33,14 @@ const experienceOptions = [
 ];
 
 export default function EmployerSearch() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [skills, setSkills] = useState<string>("");
   const [role, setRole] = useState<string>("");
   const [experience, setExperience] = useState<string>("");
   const [availability, setAvailability] = useState<string>("");
   const [location, setLocation] = useState<string>("");
   const [workPermit, setWorkPermit] = useState<string>("");
-  const [loading, setLoading] = useState(true); // Changed to true for initial loading
-  const [profiles, setProfiles] = useState<TalentVaultProfile[]>([]); // Renamed from cvs
+  const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState<TalentVaultProfile[]>([]);
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
   const [unlocking, setUnlocking] = useState<string | null>(null);
   const [subscribing, setSubscribing] = useState<"limited" | "unlimited" | null>(null);
@@ -53,77 +54,102 @@ export default function EmployerSearch() {
   };
 
   const fetchUnlocks = async () => {
-    const { data, error } = await supabase.from("unlocked_contacts").select("jobseeker_id");
-    if (!error && data) {
-      setUnlocked(new Set(data.map((d) => d.jobseeker_id)));
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      
+      const q = query(collection(db, "unlocked_contacts"), where("employer_id", "==", user.uid));
+      const snapshot = await getDocs(q);
+      
+      const unlockedIds = new Set(snapshot.docs.map(doc => doc.data().jobseeker_id));
+      setUnlocked(unlockedIds);
+    } catch (error) {
+      console.error("Error fetching unlocks:", error);
     }
   };
 
   const fetchSubscription = async () => {
-    const { data } = await supabase
-      .from("employer_subscriptions")
-      .select("plan_code, status, current_period_end")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (data) {
-      const sub: SubscriptionSummary = {
-        plan_code: data.plan_code,
-        status: data.status,
-        current_period_end: data.current_period_end ?? null,
-      };
-      setSubscription(sub);
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      
+      const q = query(
+        collection(db, "employer_subscriptions"), 
+        where("employer_id", "==", user.uid),
+        orderBy("updated_at", "desc"),
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
+      
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        const sub: SubscriptionSummary = {
+          plan_code: data.plan_code,
+          status: data.status,
+          current_period_end: data.current_period_end ?? null,
+        };
+        setSubscription(sub);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
     }
   };
 
   const search = async () => {
     setError(null);
-    let query = supabase.from("public_profile_directory").select( // Renamed table reference
-      "id, full_name, headline, summary, skills, preferred_roles, years_experience, availability, work_permit_status, location"
-    );
-
-    if (skills.trim()) {
-      const skillList = skills
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (skillList.length) {
-        query = query.contains("skills", skillList);
+    try {
+      const constraints: any[] = [];
+      
+      // Apply filters
+      if (skills.trim()) {
+        const skillList = skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (skillList.length) {
+          constraints.push(where("skills", "array-contains-any", skillList));
+        }
       }
-    }
 
-    if (role.trim()) {
-      query = query.contains("preferred_roles", [role.trim()]);
-    }
-
-    if (availability.trim()) {
-      query = query.ilike("availability", `%${availability.trim()}%`);
-    }
-
-    if (location.trim()) {
-      query = query.ilike("location", `%${location.trim()}%`);
-    }
-
-    if (workPermit.trim()) {
-      query = query.ilike("work_permit_status", `%${workPermit.trim()}%`);
-    }
-
-    if (experience) {
-      const [min, max] = experience === "10+" ? [10, null] : experience.split("-").map(Number);
-      if (min !== undefined) {
-        query = query.gte("years_experience", min);
+      if (role.trim()) {
+        constraints.push(where("preferred_roles", "array-contains", role.trim()));
       }
-      if (max !== null) {
-        query = query.lte("years_experience", max as number);
-      }
-    }
 
-    const { data, error } = await query.limit(50);
-    if (error) {
+      if (availability.trim()) {
+        constraints.push(where("availability", "==", availability.trim()));
+      }
+
+      if (location.trim()) {
+        constraints.push(where("location", "==", location.trim()));
+      }
+
+      if (workPermit.trim()) {
+        constraints.push(where("work_permit_status", "==", workPermit.trim()));
+      }
+
+      if (experience) {
+        const [min, max] = experience === "10+" ? [10, null] : experience.split("-").map(Number);
+        if (min !== undefined) {
+          constraints.push(where("years_experience", ">=", min));
+        }
+        if (max !== null) {
+          constraints.push(where("years_experience", "<=", max as number));
+        }
+      }
+
+      constraints.push(limit(50));
+      
+      const q = query(collection(db, "public_profile_directory"), ...constraints);
+      const snapshot = await getDocs(q);
+      const profiles = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as TalentVaultProfile[];
+      
+      setProfiles(profiles);
+    } catch (error: any) {
       setError(error.message);
-      setProfiles([]); // Renamed from setCvs
-    } else {
-      setProfiles(data || []); // Renamed from setCvs
+      setProfiles([]);
     }
   };
 

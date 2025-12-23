@@ -1,32 +1,43 @@
 import { requireRole } from "@/lib/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { dbAdmin } from "@/lib/firebase-admin";
 import AdminModerationBoard from "@/components/admin-moderation-board";
 
 export default async function AdminDashboard() {
   await requireRole("admin", "/admin");
-  const supabase = await createSupabaseServerClient();
 
-  const { count: profileCount } = await supabase
-    .from("jobseeker_profiles")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
+  const [profileSnapshot, employerSnapshot, unlockSnapshot, profilesSnapshot] = await Promise.all([
+    dbAdmin.collection("jobseeker_profiles").get(),
+    dbAdmin.collection("employers").get(),
+    dbAdmin.collection("unlocked_contacts").get(),
+    dbAdmin.collection("jobseeker_profiles")
+      .orderBy("updated_at", "desc")
+      .limit(50)
+      .get()
+  ]);
 
-  const { count: employerCount } = await supabase
-    .from("employers")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
+  const profileCount = profileSnapshot.size;
+  const employerCount = employerSnapshot.size;
+  const unlockCount = unlockSnapshot.size;
 
-  const { count: unlockCount } = await supabase
-    .from("unlocked_contacts")
-    .select("id", { count: "exact", head: true });
-
-  const { data: profiles } = await supabase
-    .from("jobseeker_profiles")
-    .select(
-      "id, headline, visibility, moderation_status, skills, years_experience, location, updated_at, profiles(full_name)"
-    )
-    .order("updated_at", { ascending: false })
-    .limit(50);
+  // Get profiles with user data
+  const profiles = [];
+  for (const doc of profilesSnapshot.docs) {
+    const profileData = doc.data();
+    const userDoc = await dbAdmin.collection("profiles").doc(doc.id).get();
+    const userData = userDoc.data();
+    
+    profiles.push({
+      id: doc.id,
+      headline: profileData.headline || '',
+      visibility: profileData.visibility || 'public',
+      moderation_status: profileData.moderation_status || 'approved',
+      skills: profileData.skills || [],
+      years_experience: profileData.years_experience || null,
+      location: profileData.location || null,
+      updated_at: profileData.updated_at || new Date().toISOString(),
+      profiles: userData ? { full_name: userData.full_name } : null
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -36,13 +47,13 @@ export default async function AdminDashboard() {
           Moderate Profiles, flag abuse, and view basic directory metrics.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <Metric label="Total Profiles" value={profileCount ?? 0} />
-          <Metric label="Active employers" value={employerCount ?? 0} />
-          <Metric label="Profile unlocks" value={unlockCount ?? 0} />
+          <Metric label="Total Profiles" value={profileCount} />
+          <Metric label="Active employers" value={employerCount} />
+          <Metric label="Profile unlocks" value={unlockCount} />
         </div>
       </div>
 
-      <AdminModerationBoard profiles={profiles as any ?? []} />
+      <AdminModerationBoard profiles={profiles} />
     </div>
   );
 }

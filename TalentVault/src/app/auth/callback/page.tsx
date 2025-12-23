@@ -19,9 +19,8 @@ export default async function AuthCallbackPage({ searchParams }: { searchParams:
     switch (mode) {
       case "verifyEmail": {
         // Verify email and sign in the user
-        const userRecord = await authAdmin.verifyIdToken(oobCode);
-        
-        if (userRecord) {
+        const userCredential = await authAdmin.verifyAndProcessEmailAction(oobCode);
+        const user = userCredential.user;
           // Ensure profile exists in Firestore (from signup) or create it if not
           const profileRef = dbAdmin.collection("profiles").doc(userRecord.uid);
           const profileSnap = await profileRef.get();
