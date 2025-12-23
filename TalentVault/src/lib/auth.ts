@@ -27,7 +27,8 @@ export async function getSessionProfile(): Promise<{
   if (isE2E) {
     // In E2E mode, return a mocked session profile
     const { headers } = await import("next/headers"); // Import dynamically for server context
-    const pathname = headers().get("x-invoke-path") || "/"; // Get pathname for role inference
+    const headersList = await headers();
+    const pathname = headersList.get("x-invoke-path") || "/"; // Get pathname for role inference
 
     let role: AppRole = "jobseeker"; // Default role
 

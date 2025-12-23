@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { z } from "zod";
 import { auth, db, storage } from "@/lib/firebase"; // Import Firebase services
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage functions
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage functions
 import { collection, doc, setDoc, updateDoc, deleteDoc, getDocs, query, where, addDoc } from "firebase/firestore"; // Firestore functions
 
 const experienceSchema = z.object({
@@ -88,189 +88,6 @@ export default function JobseekerProfileForm({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-
-    const form = new FormData(e.currentTarget);
-    const payload = {
-      full_name: String(form.get("full_name") || "").trim(),
-      headline: String(form.get("headline") || "").trim(),
-      summary: String(form.get("summary") || "").trim(),
-      availability: String(form.get("availability") || "").trim(),
-      location: String(form.get("location") || "").trim(),
-      years_experience: form.get("years_experience")
-        ? Number(form.get("years_experience"))
-        : undefined,
-      work_permit_status: String(form.get("work_permit_status") || "").trim() || undefined,
-      salary_expectation_eur: form.get("salary_expectation_eur")
-        ? Number(form.get("salary" + "_expectation_eur"))
-        : undefined,
-      visibility: form.get("visibility") as "public" | "employers_only" | "hidden",
-      contact_email: String(form.get("contact_email") || "").trim(),
-      phone: String(form.get("phone") || "").trim() || undefined,
-      skills,
-      experiences,
-    };
-
-    const parsed = profileSchema.safeParse(payload);
-    if (!parsed.success) {
-      setSaving(false);
-      const message = parsed.error.issues?.[0]?.message || "Please fix the highlighted issues.";
-      setError(message);
-      return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) {
-      setSaving(false);
-      setError("You must be signed in.");
-      return;
-    }
-
-    let profilePath = initialContact?.profile_storage_path || null;
-    try {
-      if (profileFile) {
-        if (profileFile.type !== "application/pdf") {
-          setSaving(false);
-          setError("Profile must be a PDF file.");
-          return;
-        }
-        const storageRef = ref(storage, `profile-files/${user.uid}/${profileFile.name}`);
-        const uploadTask = await uploadBytes(storageRef, profileFile);
-        profilePath = await getDownloadURL(uploadTask.ref);
-      }
-
-      await setDoc(doc(db, "jobseeker_profiles", userId), {
-        headline: payload.headline,
-        summary: payload.summary,
-        skills: payload.skills,
-        availability: payload.availability,
-        location: payload.location,
-        years_experience: payload.years_experience,
-        visibility: payload.visibility,
-        work_permit_status: payload.work_permit_status,
-        salary_expectation_eur: payload.salary_expectation_eur,
-        updated_at: new Date().toISOString(),
-      }, { merge: true });
-
-      await setDoc(doc(db, "jobseeker_contacts", userId), {
-        contact_email: payload.contact_email,
-        phone: payload.phone,
-        profile_storage_path: profilePath,
-        updated_at: new Date().toISOString(),
-      }, { merge: true });
-
-      await updateDoc(doc(db, "profiles", userId), {
-        full_name: payload.full_name,
-        location: payload.location,
-        updated_at: new Date().toISOString(),
-      });
-
-      // Replace work experiences
-      // First, delete existing experiences
-      const existingExperiencesQuery = query(collection(db, "profiles", userId, "experiences")); // Subcollection
-      const existingExperiences = await getDocs(existingExperiencesQuery);
-      
-      const deletePromises = existingExperiences.docs.map(doc => deleteDoc(doc.ref));
-      await Promise.all(deletePromises);
-
-      if (payload.experiences && payload.experiences.length > 0) {
-        const insertPromises = payload.experiences.map(exp => 
-          addDoc(collection(db, "profiles", userId, "experiences"), { // Subcollection
-            title: exp.title,
-            company: exp.company,
-            start_date: exp.start_date,
-            end_date: exp.is_current ? null : exp.end_date || null,
-            is_current: Boolean(exp.is_current),
-            location: exp.location,
-            description: exp.description,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-        );
-        await Promise.all(insertPromises);
-      }
-
-      setMessage("Profile saved successfully.");
-    } catch (firebaseError: any) {
-      setError(firebaseError.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <form className="space-y-6" onSubmit={onSubmit}>
-      <div className="card p-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
-          Jobseeker profile
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          Publish your Profile on TalentVault for local employers to discover
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Structured profile first; optional PDF upload for completeness.
-        </p>
-      </div>
-
-      <div className="card space-y-4 p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Personal info</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Full name">
-            <input
-              name="full_name"
-              defaultValue={fullName}
-              required
-              className="input"
-            />
-          </Field>
-          <Field label="Location">
-            <input
-              name="location"
-              defaultValue={initialProfile?.location || ""}
-              required
-              className="input"
-            />
-          </Field>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Contact email">
-            <input
-              name="contact_email"
-              type="email"
-              defaultValue={initialContact?.contact_email || ""}
-              required
-              className="input"
-            />
-          </Field>
-          <Field label="Phone (optional)">
-            <input
-              name="phone"
-              defaultValue={initialContact?.phone || ""}
-              className="input"
-            />
-          </Field>
-        </div>
-      </div>
-
-      <div className="card space-y-4 p-6">
-        <button
-          type="submit"
-          disabled={saving}
-          className="btn btn-primary"
-        >
-          {saving ? "Saving..." : "Save profile"}
-        </button>
-        {message && <p className="text-green-600">{message}</p>}
-        {error && <p className="text-red-600">{error}</p>}
-      </div>
-    </form>
-  );
-}
 
   const addSkill = () => {
     const val = skillInput.trim();
@@ -358,20 +175,18 @@ export default function JobseekerProfileForm({
     }
 
     let profilePath = initialContact?.profile_storage_path || null;
-    if (profileFile) {
-      if (profileFile.type !== "application/pdf") {
-        setSaving(false);
-        setError("Profile must be a PDF file.");
-        return;
-      }
-      // Note: Firebase Storage integration would go here
-      // For now, we'll skip file upload and focus on the database operations
-      setError("File upload not yet implemented with Firebase Storage.");
-      setSaving(false);
-      return;
-    }
-
     try {
+      if (profileFile) {
+        if (profileFile.type !== "application/pdf") {
+          setSaving(false);
+          setError("Profile must be a PDF file.");
+          return;
+        }
+        const storageRef = ref(storage, `profile-files/${user.uid}/${profileFile.name}`);
+        const uploadTask = await uploadBytes(storageRef, profileFile);
+        profilePath = await getDownloadURL(uploadTask.ref);
+      }
+
       await setDoc(doc(db, "jobseeker_profiles", userId), {
         id: userId,
         headline: payload.headline,
@@ -396,7 +211,8 @@ export default function JobseekerProfileForm({
 
       await updateDoc(doc(db, "profiles", userId), { 
         full_name: payload.full_name, 
-        location: payload.location 
+        location: payload.location,
+        updated_at: new Date().toISOString(),
       });
 
       // Replace work experiences
@@ -431,6 +247,7 @@ export default function JobseekerProfileForm({
       setSaving(false);
       setError(error.message);
     }
+  };
 
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
