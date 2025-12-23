@@ -4,13 +4,13 @@ const nextConfig: NextConfig = {
   /* config options here */
   // Add headers for Content Security Policy
   async headers() {
-    const scriptSrc = [
+    const scriptSrc = ["'self'", "'unsafe-eval'", "'unsafe-inline'"].join(" ");
+    const connectSrc = [
       "'self'",
-      "'unsafe-eval'",
-      "'unsafe-inline'",
-      "https://vercel.live",
+      "https://identitytoolkit.googleapis.com",
+      "https://firebase.googleapis.com",
+      "https://firestore.googleapis.com",
     ].join(" ");
-    const connectSrc = ["'self'", "https://vercel.live", "https://identitytoolkit.googleapis.com", "https://firebase.googleapis.com", "https://firestore.googleapis.com"].join(" ");
 
     return [
       {
@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
               `script-src-elem ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data:",
-              "font-src 'self' *.vercel.com *.gstatic.com vercel.live r2cdn.perplexity.ai",
+              "font-src 'self' *.gstatic.com r2cdn.perplexity.ai",
               `connect-src ${connectSrc}`,
             ].join("; "),
           },
