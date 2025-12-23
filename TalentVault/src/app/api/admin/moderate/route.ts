@@ -1,24 +1,26 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { authAdmin, dbAdmin } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
 
 type Action = "flag" | "unflag" | "hide" | "unhide";
 
 export async function POST(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  // Get session cookie
+  const sessionCookie = (await cookies()).get('__session')?.value;
+  
+  if (!sessionCookie) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .is("deleted_at", null)
-    .maybeSingle();
+  // Verify session cookie
+  const decodedClaims = await authAdmin.verifySessionCookie(sessionCookie, true);
+  if (!decodedClaims) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  // Get user profile from Firestore
+  const profileDoc = await dbAdmin.collection('profiles').doc(decodedClaims.uid).get();
+  const profile = profileDoc.data();
 
   if (!profile || profile.role !== "admin") {
     return NextResponse.json({ error: "Admins only" }, { status: 403 });
@@ -33,57 +35,74 @@ export async function POST(request: Request) {
 
   switch (action) {
     case "flag": {
-      await supabaseAdmin.from("moderation_flags").insert({
+      await dbAdmin.collection("moderation_flags").add({
         subject_type: "jobseeker_profile",
         subject_id: jobseekerId,
-        raised_by: user.id,
+        raised_by: decodedClaims.uid,
         status: "pending",
         reason: "Flagged by admin UI",
+        created_at: new Date().toISOString(),
       });
-      await supabaseAdmin
-        .from("jobseeker_profiles")
-        .update({ moderation_status: "pending" })
-        .eq("id", jobseekerId);
+      await dbAdmin
+        .collection("jobseeker_profiles")
+        .doc(jobseekerId)
+        .update({ moderation_status: "pending" });
       return NextResponse.json({ moderation_status: "pending" });
     }
     case "unflag": {
-      await supabaseAdmin
-        .from("moderation_flags")
-        .update({ status: "approved", resolved_at: new Date().toISOString() })
-        .eq("subject_id", jobseekerId)
-        .eq("subject_type", "jobseeker_profile");
-      await supabaseAdmin
-        .from("jobseeker_profiles")
-        .update({ moderation_status: "approved" })
-        .eq("id", jobseekerId);
+      const flagsQuery = await dbAdmin
+        .collection("moderation_flags")
+        .where("subject_id", "==", jobseekerId)
+        .where("subject_type", "==", "jobseeker_profile")
+        .get();
+      
+      for (const doc of flagsQuery.docs) {
+        await doc.ref.update({ 
+          status: "approved", 
+          resolved_at: new Date().toISOString() 
+        });
+      }
+      
+      await dbAdmin
+        .collection("jobseeker_profiles")
+        .doc(jobseekerId)
+        .update({ moderation_status: "approved" });
       return NextResponse.json({ moderation_status: "approved" });
     }
     case "hide": {
-      await supabaseAdmin
-        .from("jobseeker_profiles")
-        .update({ visibility: "hidden", moderation_status: "suspended" })
-        .eq("id", jobseekerId);
-      await supabaseAdmin
-        .from("moderation_flags")
-        .insert({
-          subject_type: "jobseeker_profile",
-          subject_id: jobseekerId,
-          raised_by: user.id,
-          status: "suspended",
-          reason: "Hidden/suspended by admin",
-        });
+      await dbAdmin
+        .collection("jobseeker_profiles")
+        .doc(jobseekerId)
+        .update({ visibility: "hidden", moderation_status: "suspended" });
+      await dbAdmin.collection("moderation_flags").add({
+        subject_type: "jobseeker_profile",
+        subject_id: jobseekerId,
+        raised_by: decodedClaims.uid,
+        status: "suspended",
+        reason: "Hidden/suspended by admin",
+        created_at: new Date().toISOString(),
+      });
       return NextResponse.json({ moderation_status: "suspended", visibility: "hidden" });
     }
     case "unhide": {
-      await supabaseAdmin
-        .from("jobseeker_profiles")
-        .update({ visibility: "public", moderation_status: "approved" })
-        .eq("id", jobseekerId);
-      await supabaseAdmin
-        .from("moderation_flags")
-        .update({ status: "approved", resolved_at: new Date().toISOString() })
-        .eq("subject_id", jobseekerId)
-        .eq("subject_type", "jobseeker_profile");
+      await dbAdmin
+        .collection("jobseeker_profiles")
+        .doc(jobseekerId)
+        .update({ visibility: "public", moderation_status: "approved" });
+      
+      const flagsQuery = await dbAdmin
+        .collection("moderation_flags")
+        .where("subject_id", "==", jobseekerId)
+        .where("subject_type", "==", "jobseeker_profile")
+        .get();
+      
+      for (const doc of flagsQuery.docs) {
+        await doc.ref.update({ 
+          status: "approved", 
+          resolved_at: new Date().toISOString() 
+        });
+      }
+      
       return NextResponse.json({ moderation_status: "approved", visibility: "public" });
     }
     default:
