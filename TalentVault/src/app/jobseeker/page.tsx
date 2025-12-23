@@ -1,9 +1,12 @@
 import { requireRole } from "@/lib/auth";
-import { dbAdmin } from "@/lib/firebase-admin";
+import { getDbAdmin } from "@/lib/firebase-admin";
 import JobseekerProfileForm from "@/components/jobseeker-profile-form";
+
+export const dynamic = "force-dynamic";
 
 export default async function JobseekerDashboard() {
   const profile = await requireRole("jobseeker", "/jobseeker");
+  const dbAdmin = getDbAdmin();
 
   const [jobseekerProfileDoc, contactDoc, experiencesSnapshot] = await Promise.all([
     dbAdmin.collection("jobseeker_profiles").doc(profile.id).get(),

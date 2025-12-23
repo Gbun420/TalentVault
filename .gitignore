@@ -31,3 +31,4 @@ coverage
 *.log
 *.pnp.js
 .eslintcache
+.vercel

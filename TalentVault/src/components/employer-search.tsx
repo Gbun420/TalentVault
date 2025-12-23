@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
-import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, getDocs, type QueryConstraint } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 type TalentVaultProfile = { // Renamed from CV
@@ -46,6 +46,9 @@ export default function EmployerSearch() {
   const [subscribing, setSubscribing] = useState<"limited" | "unlimited" | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const getErrorMessage = (err: unknown) =>
+    err instanceof Error ? err.message : "Something went wrong";
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -98,7 +101,7 @@ export default function EmployerSearch() {
   const search = async () => {
     setError(null);
     try {
-      const constraints: any[] = [];
+      const constraints: QueryConstraint[] = [];
       
       // Apply filters
       if (skills.trim()) {
@@ -151,8 +154,8 @@ export default function EmployerSearch() {
       })) as TalentVaultProfile[];
       
       setProfiles(profiles);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
       setProfiles([]);
     }
   };

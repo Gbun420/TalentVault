@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { authAdmin, dbAdmin } from "@/lib/firebase-admin"; // Import Firebase Admin
+import { getAuthAdmin, getDbAdmin } from "@/lib/firebase-admin"; // Import Firebase Admin
 import { cookies } from "next/headers"; // For getting the ID token from cookies
 
 export type AppRole = "jobseeker" | "employer" | "admin";
@@ -56,6 +56,8 @@ export async function getSessionProfile(): Promise<{
       return { userId: null, profile: null };
     }
 
+    const authAdmin = getAuthAdmin();
+    const dbAdmin = getDbAdmin();
     const decodedToken = await authAdmin.verifyIdToken(idToken);
     const userId = decodedToken.uid;
 

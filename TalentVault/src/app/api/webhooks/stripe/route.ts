@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
-import { dbAdmin } from "@/lib/firebase-admin";
+import { getDbAdmin } from "@/lib/firebase-admin";
 import Stripe from "stripe";
 
 function mapStatus(status: Stripe.Subscription.Status) {
@@ -12,6 +12,7 @@ function mapStatus(status: Stripe.Subscription.Status) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const dbAdmin = getDbAdmin();
   const paymentType = session.metadata?.payment_type;
   if (paymentType === "unlock") {
     const employerId = session.metadata?.employer_id as string | undefined;
@@ -84,6 +85,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 }
 
 async function handleSubscriptionEvent(subscription: Stripe.Subscription) {
+  const dbAdmin = getDbAdmin();
   const employerId = subscription.metadata?.employer_id as string | undefined;
   const planCode = subscription.metadata?.plan_code as string | undefined;
   if (!employerId || !planCode) return;

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { authAdmin, dbAdmin } from "@/lib/firebase-admin";
+import { getAuthAdmin, getDbAdmin } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
+    const authAdmin = getAuthAdmin();
+    const dbAdmin = getDbAdmin();
     // Get session cookie
     const sessionCookie = (await cookies()).get('__session')?.value;
     

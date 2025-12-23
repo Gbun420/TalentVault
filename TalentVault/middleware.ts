@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from "next/server";
-import { AppRole, roleHome } from "@/lib/auth-constants";
 
 const jobseekerPrefixes = ["/jobseeker"];
 const employerPrefixes = ["/employer"];

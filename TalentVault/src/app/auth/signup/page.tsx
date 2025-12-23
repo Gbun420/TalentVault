@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState, useEffect } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
@@ -13,6 +13,9 @@ export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const getErrorMessage = (err: unknown) =>
+    err instanceof Error ? err.message : "Something went wrong";
 
   useEffect(() => {
     // E2E Bypass: Immediately redirect to dashboard
@@ -53,8 +56,8 @@ export default function SignupPage() {
 
         router.push("/auth/verify-email-message"); // Inform user to check email
       }
-    } catch (firebaseError: any) {
-      setError(firebaseError.message);
+    } catch (firebaseError: unknown) {
+      setError(getErrorMessage(firebaseError));
     } finally {
       setLoading(false);
     }

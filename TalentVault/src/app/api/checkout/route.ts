@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
-import { authAdmin, dbAdmin } from "@/lib/firebase-admin";
+import { getAuthAdmin, getDbAdmin } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 
 type Body =
@@ -10,6 +10,8 @@ type Body =
 
 export async function POST(request: Request) {
   try {
+    const authAdmin = getAuthAdmin();
+    const dbAdmin = getDbAdmin();
     // Get session cookie
     const sessionCookie = (await cookies()).get('__session')?.value;
     

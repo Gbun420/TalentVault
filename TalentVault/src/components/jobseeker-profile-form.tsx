@@ -89,6 +89,9 @@ export default function JobseekerProfileForm({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const getErrorMessage = (err: unknown) =>
+    err instanceof Error ? err.message : "Something went wrong";
+
   const addSkill = () => {
     const val = skillInput.trim();
     if (val && !skills.includes(val)) {
@@ -243,9 +246,9 @@ export default function JobseekerProfileForm({
 
       setSaving(false);
       setMessage("Profile saved successfully.");
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSaving(false);
-      setError(error.message);
+      setError(getErrorMessage(error));
     }
   };
 

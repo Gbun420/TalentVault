@@ -1,5 +1,7 @@
 import { requireRole } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export default async function EmployerDashboard() {
   const profile = await requireRole(["employer", "admin"], "/employer");
 

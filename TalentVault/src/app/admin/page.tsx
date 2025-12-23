@@ -1,9 +1,12 @@
 import { requireRole } from "@/lib/auth";
-import { dbAdmin } from "@/lib/firebase-admin";
+import { getDbAdmin } from "@/lib/firebase-admin";
 import AdminModerationBoard from "@/components/admin-moderation-board";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   await requireRole("admin", "/admin");
+  const dbAdmin = getDbAdmin();
 
   const [profileSnapshot, employerSnapshot, unlockSnapshot, profilesSnapshot] = await Promise.all([
     dbAdmin.collection("jobseeker_profiles").get(),

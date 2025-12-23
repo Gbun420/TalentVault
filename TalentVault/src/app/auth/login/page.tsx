@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useState, useEffect } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
@@ -25,7 +25,10 @@ function LoginForm() {
   const [showMagicLinkSentMessage, setShowMagicLinkSentMessage] = useState(false);
   const [emailForSignIn, setEmailForSignIn] = useState("");
 
-  const handleRedirect = async (userId: string) => {
+  const getErrorMessage = (err: unknown) =>
+    err instanceof Error ? err.message : "Something went wrong";
+
+  const handleRedirect = useCallback(async (userId: string) => {
     // Fetch role from Firestore
     const docRef = doc(db, "profiles", userId);
     const docSnap = await getDoc(docRef);
@@ -37,7 +40,7 @@ function LoginForm() {
 
     const fallback = redirectTo || (role ? roleHome[role] : "/");
     router.replace(role ? roleHome[role] : fallback);
-  };
+  }, [redirectTo, router]);
 
   useEffect(() => {
     // E2E Bypass: Immediately redirect to dashboard
@@ -54,7 +57,6 @@ function LoginForm() {
         email = window.prompt("Please provide your email for confirmation");
       }
       if (email) {
-        setLoading(true);
         signInWithEmailLink(auth, email, window.location.href)
           .then((result) => {
             window.localStorage.removeItem("emailForSignIn");
@@ -62,13 +64,13 @@ function LoginForm() {
               handleRedirect(result.user.uid);
             }
           })
-          .catch((firebaseError: any) => {
-            setError(firebaseError.message);
+          .catch((firebaseError: unknown) => {
+            setError(getErrorMessage(firebaseError));
             setLoading(false);
           });
       }
     }
-  }, []);
+  }, [handleRedirect, router]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -89,8 +91,8 @@ function LoginForm() {
           window.localStorage.setItem("emailForSignIn", email);
           setShowMagicLinkSentMessage(true);
         })
-        .catch((firebaseError: any) => {
-          setError(firebaseError.message);
+        .catch((firebaseError: unknown) => {
+          setError(getErrorMessage(firebaseError));
         })
         .finally(() => {
           setLoading(false);
@@ -105,8 +107,8 @@ function LoginForm() {
           handleRedirect(userCredential.user.uid);
         }
       })
-      .catch((firebaseError: any) => {
-        setError(firebaseError.message);
+      .catch((firebaseError: unknown) => {
+        setError(getErrorMessage(firebaseError));
       })
       .finally(() => {
         setLoading(false);
