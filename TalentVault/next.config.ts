@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
       "'unsafe-inline'",
       "https://vercel.live",
     ].join(" ");
-    const connectSrc = ["'self'", "https://vercel.live"].join(" ");
+    const connectSrc = ["'self'", "https://vercel.live", "https://identitytoolkit.googleapis.com", "https://firebase.googleapis.com", "https://firestore.googleapis.com"].join(" ");
 
     return [
       {

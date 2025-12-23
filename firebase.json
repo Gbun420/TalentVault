@@ -1,0 +1,8 @@
+{
+  "hosting": {
+    "source": "TalentVault",
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
+  }
+}
