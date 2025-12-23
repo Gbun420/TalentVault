@@ -1,61 +1,65 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server"; // Using NextResponse for redirects
 import { redirect } from "next/navigation";
 import { AppRole, roleHome } from "@/lib/auth-constants";
-import { headers } from "next/headers"; // For getting the current URL
 import { env } from "@/lib/env";
+import { authAdmin, dbAdmin } from "@/lib/firebase-admin"; // Import Firebase Admin
 
 export default async function AuthCallbackPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-  const code = searchParams.code as string;
-  const next = searchParams.next as string || "/";
+  const mode = searchParams.mode as string;
+  const oobCode = searchParams.oobCode as string; // Out-of-band code for Firebase Auth actions
+  const continueUrl = searchParams.continueUrl as string || "/"; // Where to redirect after action
+  const roleFromSignup = searchParams.role as AppRole || "jobseeker"; // Role passed during signup
+  const fullNameFromSignup = searchParams.full_name as string || ""; // Full name passed during signup
 
-  if (code) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error && data.user) {
-      // Get user metadata from the signup
-      const userMetadata = data.user.user_metadata || {};
-      const role = userMetadata.role as AppRole || "jobseeker";
-      const full_name = userMetadata.full_name as string || "";
-
-      // After successful session, insert profile
-      // Check if profile already exists to prevent duplicate inserts on refresh
-      const { data: existingProfile, error: fetchProfileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", data.user.id)
-        .single();
-
-      if (fetchProfileError && fetchProfileError.code !== "PGRST116") { // PGRST116 means no rows found
-        console.error("Error fetching existing profile:", fetchProfileError);
-        redirect("/auth/login?message=Could not create profile");
-      }
-
-      if (!existingProfile) {
-        // Only insert if profile doesn't exist
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .upsert({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: full_name,
-            role: role,
-          });
-
-        if (profileError) {
-          console.error("Profile insertion error:", profileError);
-          redirect("/auth/login?message=Could not create profile");
-        }
-      }
-
-      // Redirect to the role-specific homepage
-      if (data.user.id) {
-        return redirect(roleHome[role] || next);
-      }
-    }
+  if (!oobCode || !mode) {
+    redirect("/auth/login?message=Invalid verification link.");
   }
 
-  // If there's an error or no code, redirect to an error page or login
-  redirect("/auth/login?message=Could not log in");
+  try {
+    switch (mode) {
+      case "verifyEmail": {
+        // Verify email and sign in the user
+        const userCredential = await authAdmin.verifyAndProcessEmailAction(oobCode);
+        const user = userCredential.user;
+
+        if (user) {
+          // Ensure profile exists in Firestore (from signup) or create it if not
+          const profileRef = dbAdmin.collection("profiles").doc(user.uid);
+          const profileSnap = await profileRef.get();
+
+          if (!profileSnap.exists) {
+            await profileRef.set({
+              full_name: fullNameFromSignup || user.displayName || user.email, // Use passed full_name or user.displayName
+              email: user.email,
+              role: roleFromSignup, // Use passed role
+              createdAt: new Date().toISOString(),
+              emailVerified: true,
+            });
+          } else {
+            // Update emailVerified status if profile already exists
+            await profileRef.update({ emailVerified: true });
+          }
+
+          // Redirect to role-specific homepage
+          const finalRole = profileSnap.exists ? profileSnap.data()?.role as AppRole : roleFromSignup;
+          redirect(roleHome[finalRole] || "/");
+        }
+        break;
+      }
+      case "signIn": {
+        // This is primarily handled client-side in login/page.tsx's useEffect.
+        // If the user lands here directly, it means the client-side redirect didn't happen for some reason.
+        // We can simply try to redirect them to the client-side login to complete the flow.
+        redirect("/auth/login?message=Login link received. Redirecting to complete sign-in...");
+        break;
+      }
+      // Add other modes like 'resetPassword' if needed
+      default: {
+        redirect("/auth/login?message=Unsupported action.");
+      }
+    }
+  } catch (error: any) {
+    console.error("Firebase Auth Callback Error:", error);
+    // Handle error - typically redirect to login with an error message
+    redirect(`/auth/login?message=${encodeURIComponent(error.message || "Authentication failed.")}`);
+  }
 }

@@ -1,36 +1,69 @@
 "use client";
 
-import { FormEvent, Suspense, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { roleHome, AppRole } from "@/lib/auth-constants";
+import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
+import { AppRole } from "@/lib/auth-constants";
 import { env } from "@/lib/env"; // Import the env object
+import {
+  signInWithEmailAndPassword,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  onAuthStateChanged,
+} from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore"; // For fetching roles from Firestore
 
 function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const redirectTo = search.get("redirectTo") || "/";
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [usePasswordless, setUsePasswordless] = useState(false);
-  const [showOtpInput, setShowOtpInput] = useState(false);
-  const [otpEmail, setOtpEmail] = useState(""); // Store email for OTP verification
-  const [otpCode, setOtpCode] = useState("");
+  const [showMagicLinkSentMessage, setShowMagicLinkSentMessage] = useState(false);
+  const [emailForSignIn, setEmailForSignIn] = useState("");
 
   const handleRedirect = async (userId: string) => {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
+    // Fetch role from Firestore
+    const docRef = doc(db, "profiles", userId);
+    const docSnap = await getDoc(docRef);
 
-    const role = profile?.role as AppRole | undefined;
+    let role: AppRole | undefined;
+    if (docSnap.exists()) {
+      role = docSnap.data().role as AppRole;
+    }
+
     const fallback = redirectTo || (role ? roleHome[role] : "/");
     router.replace(role ? roleHome[role] : fallback);
   };
+
+  useEffect(() => {
+    // Handle magic link sign-in on component mount
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem("emailForSignIn");
+      if (!email) {
+        // User opened the link on a different device or browser
+        email = window.prompt("Please provide your email for confirmation");
+      }
+      if (email) {
+        setLoading(true);
+        signInWithEmailLink(auth, email, window.location.href)
+          .then((result) => {
+            window.localStorage.removeItem("emailForSignIn");
+            if (result.user) {
+              handleRedirect(result.user.uid);
+            }
+          })
+          .catch((firebaseError: any) => {
+            setError(firebaseError.message);
+            setLoading(false);
+          });
+      }
+    }
+  }, []);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,66 +74,38 @@ function LoginForm() {
     setLoading(true);
 
     if (usePasswordless) {
-      // Send OTP code (magic link)
-      setOtpEmail(email); // Store email for subsequent OTP verification
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${env.siteUrl}/auth/callback`, // Use SITE_URL
-        },
-      });
-
-      if (otpError) {
-        setError(otpError.message);
-        setLoading(false);
-        return;
-      }
-
-      setShowOtpInput(true);
-      setLoading(false);
+      // Send magic link
+      const actionCodeSettings = {
+        url: `${env.siteUrl}/auth/callback`, // Firebase will append the oobCode
+        handleCodeInApp: true,
+      };
+      sendSignInLinkToEmail(auth, email, actionCodeSettings)
+        .then(() => {
+          window.localStorage.setItem("emailForSignIn", email);
+          setShowMagicLinkSentMessage(true);
+        })
+        .catch((firebaseError: any) => {
+          setError(firebaseError.message);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
       return;
     }
 
     // Regular password login
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      await handleRedirect(data.user.id);
-    }
-  };
-
-  const onOtpSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const code = String(formData.get("otp") || "").trim();
-    
-    setError(null);
-    setLoading(true);
-
-    const { data, error: verifyError } = await supabase.auth.verifyOtp({
-      email: otpEmail, // Use stored email
-      token: code,
-      type: "email",
-    });
-
-    if (verifyError) {
-      setError(verifyError.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      await handleRedirect(data.user.id);
-    }
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        if (userCredential.user) {
+          handleRedirect(userCredential.user.uid);
+        }
+      })
+      .catch((firebaseError: any) => {
+        setError(firebaseError.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
@@ -112,7 +117,12 @@ function LoginForm() {
             Access your TalentVault account.
           </p>
         </div>
-        <form className="space-y-4" onSubmit={showOtpInput ? onOtpSubmit : onSubmit}>
+        {showMagicLinkSentMessage ? (
+          <p className="text-sm text-green-600 text-center mb-4">
+            A magic link has been sent to your email. Please click it to sign in.
+          </p>
+        ) : null}
+        <form className="space-y-4" onSubmit={onSubmit}>
           <div>
             <label className="text-sm font-medium text-slate-700">Email</label>
             <input
@@ -120,12 +130,12 @@ function LoginForm() {
               type="email"
               required
               className="input mt-1"
-              defaultValue={otpEmail} // Prefill email if sending OTP
-              onChange={(e) => setOtpEmail(e.target.value)}
-              readOnly={usePasswordless && showOtpInput}
+              defaultValue={emailForSignIn}
+              onChange={(e) => setEmailForSignIn(e.target.value)}
+              readOnly={loading}
             />
           </div>
-          {!usePasswordless && !showOtpInput && (
+          {!usePasswordless && (
             <div>
               <label className="text-sm font-medium text-slate-700">Password</label>
               <input
@@ -136,48 +146,23 @@ function LoginForm() {
               />
             </div>
           )}
-          {showOtpInput && (
-            <div>
-              <label className="text-sm font-medium text-slate-700">6-digit Code</label>
-              <input
-                name="otp"
-                type="text"
-                maxLength={6}
-                pattern="[0-9]{6}"
-                placeholder="000000"
-                required
-                className="input mt-1 text-center text-xl tracking-widest"
-              />
-            </div>
-          )}
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <button
             type="submit"
             disabled={loading}
             className="btn btn-primary w-full"
           >
-            {loading ? (showOtpInput ? "Verifying..." : usePasswordless ? "Sending code..." : "Signing in...") : (showOtpInput ? "Verify Code" : usePasswordless ? "Send Code" : "Login")}
+            {loading ? "Signing in..." : "Login"}
           </button>
         </form>
         <div className="mt-4 space-y-2">
-          {!showOtpInput && (
-            <button
-              type="button"
-              onClick={() => setUsePasswordless(!usePasswordless)}
-              className="text-sm text-blue-700 hover:underline w-full text-center"
-            >
-              {usePasswordless ? "Use password instead" : "Use 6-digit code instead"}
-            </button>
-          )}
-          {showOtpInput && (
-            <button
-              type="button"
-              onClick={() => setShowOtpInput(false)}
-              className="text-sm text-blue-700 hover:underline w-full text-center"
-            >
-              Back to login options
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setUsePasswordless(!usePasswordless)}
+            className="text-sm text-blue-700 hover:underline w-full text-center"
+          >
+            {usePasswordless ? "Use password instead" : "Send magic link instead"}
+          </button>
         </div>
         <p className="mt-4 text-sm text-center text-slate-600">
           New here?{" "}

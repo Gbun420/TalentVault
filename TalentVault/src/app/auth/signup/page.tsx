@@ -3,13 +3,14 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
 import { AppRole } from "@/lib/auth-constants";
 import { env } from "@/lib/env"; // Import the env object
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore"; // For storing roles in Firestore
 
 export default function SignupPage() {
   const router = useRouter();
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,27 +24,32 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
 
-    const { error: signupError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: undefined, // Don't send magic link, just confirmation email
-        data: {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (user) {
+        // Send email verification
+        await sendEmailVerification(user, {
+          url: `${env.siteUrl}/auth/callback?role=${encodeURIComponent(role)}&full_name=${encodeURIComponent(full_name)}`,
+          handleCodeInApp: true, // Required for custom email action handlers
+        });
+
+        // Store user profile in Firestore
+        await setDoc(doc(db, "profiles", user.uid), {
           full_name: full_name,
+          email: user.email,
           role: role,
-        },
-      },
-    });
+          createdAt: new Date().toISOString(),
+        });
 
-    if (signupError) {
-      setError(signupError.message);
+        router.push("/auth/verify-email-message"); // Inform user to check email
+      }
+    } catch (firebaseError: any) {
+      setError(firebaseError.message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // After signup, redirect to a generic message page, or back to login with a message
-    router.push("/auth/verify-email-message"); // A new page to inform user to check email
-    return;
   };
 
   return (
