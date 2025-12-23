@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from "next/server";
-import { authAdmin, dbAdmin } from "@/lib/firebase-admin";
 import { AppRole, roleHome } from "@/lib/auth-constants";
 
 const jobseekerPrefixes = ["/jobseeker"];
@@ -9,82 +8,50 @@ const adminPrefixes = ["/admin"];
 const isProtected = (path: string, prefixes: string[]) =>
   prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 
-export async function middleware(req: NextRequest) {
-  try {
-    const res = NextResponse.next();
-    const path = req.nextUrl.pathname;
+export function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+  const res = NextResponse.next();
 
-    const isE2E = process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === "true"; // Define isE2E flag
+  const isE2E = process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === "true";
 
-    // E2E Bypass: If in E2E mode and path is protected, allow to continue without auth checks
-    if (isE2E) {
-      if (
-        isProtected(path, adminPrefixes) ||
-        isProtected(path, employerPrefixes) ||
-        isProtected(path, jobseekerPrefixes)
-      ) {
-        return res; // Allow to continue
-      }
-    }
+  // 1️⃣ FULL E2E BYPASS — NO AUTH, NO REDIRECTS
+  if (isE2E) {
+    return res;
+  }
 
-    // Add CSP headers to allow Next.js inline scripts
-    res.headers.set(
-      'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.firebaseio.com https://vercel.live;"
+  // 2️⃣ Skip static / public assets
+  if (
+    path.startsWith("/_next") ||
+    path.startsWith("/api/webhooks") ||
+    path.includes(".")
+  ) {
+    return res;
+  }
+
+  // 3️⃣ Basic session presence check ONLY
+  // (Real verification happens server-side)
+  const hasSession =
+    req.cookies.has("__session") || req.cookies.has("session");
+
+  const redirectToLogin = () =>
+    NextResponse.redirect(
+      new URL(`/auth/login?redirectTo=${encodeURIComponent(path)}`, req.url)
     );
 
-    // Skip static and public assets
-    if (path.startsWith("/_next") || path.startsWith("/api/webhooks") || path.includes(".")) {
-      return res;
-    }
-
-    // Get the session token from cookies
-    const sessionCookie = req.cookies.get('__session')?.value;
-
-    const requireRole = async (allowed: AppRole[]) => {
-      if (!sessionCookie) {
-        return NextResponse.redirect(new URL(`/auth/login?redirectTo=${encodeURIComponent(path)}`, req.url));
-      }
-
-      try {
-        // Verify the session cookie
-        const decodedClaims = await authAdmin.verifySessionCookie(sessionCookie, true);
-        
-        // Get user profile from Firestore
-        const profileDoc = await dbAdmin.collection('profiles').doc(decodedClaims.uid).get();
-        const profile = profileDoc.data();
-        const role = profile?.role as AppRole | undefined;
-
-        if (!role || !allowed.includes(role)) {
-          const userHome = role ? roleHome[role] : "/auth/login";
-          if (path !== userHome) {
-            return NextResponse.redirect(new URL(userHome, req.url));
-          } else {
-            return NextResponse.redirect(new URL("/auth/login", req.url));
-          }
-        }
-        return res;
-      } catch (error) {
-        console.error("Firebase auth error:", error);
-        return NextResponse.redirect(new URL(`/auth/login?redirectTo=${encodeURIComponent(path)}`, req.url));
-      }
-    };
-
-    if (isProtected(path, adminPrefixes)) {
-      return requireRole(["admin"]);
-    }
-    if (isProtected(path, employerPrefixes)) {
-      return requireRole(["employer"]);
-    }
-    if (isProtected(path, jobseekerPrefixes)) {
-      return requireRole(["jobseeker"]);
-    }
-
-    return res;
-  } catch (error) {
-    console.error("Middleware error:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+  // 4️⃣ Protect routes by presence, not verification
+  if (isProtected(path, adminPrefixes)) {
+    return hasSession ? res : redirectToLogin();
   }
+
+  if (isProtected(path, employerPrefixes)) {
+    return hasSession ? res : redirectToLogin();
+  }
+
+  if (isProtected(path, jobseekerPrefixes)) {
+    return hasSession ? res : redirectToLogin();
+  }
+
+  return res;
 }
 
 export const config = {
