@@ -14,6 +14,19 @@ export async function middleware(req: NextRequest) {
     const res = NextResponse.next();
     const path = req.nextUrl.pathname;
 
+    const isE2E = process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === "true"; // Define isE2E flag
+
+    // E2E Bypass: If in E2E mode and path is protected, allow to continue without auth checks
+    if (isE2E) {
+      if (
+        isProtected(path, adminPrefixes) ||
+        isProtected(path, employerPrefixes) ||
+        isProtected(path, jobseekerPrefixes)
+      ) {
+        return res; // Allow to continue
+      }
+    }
+
     // Add CSP headers to allow Next.js inline scripts
     res.headers.set(
       'Content-Security-Policy',

@@ -14,6 +14,14 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    // E2E Bypass: Immediately redirect to dashboard
+    if (process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === "true") {
+      router.replace("/jobseeker"); // Redirect to a default authenticated route
+      return; // Prevent further execution in E2E mode
+    }
+  }, [router]); // Dependency array includes router
+
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);

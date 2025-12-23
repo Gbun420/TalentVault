@@ -22,6 +22,32 @@ export async function getSessionProfile(): Promise<{
   userId: string | null;
   profile: SessionProfile | null;
 }> {
+  const isE2E = process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === "true";
+
+  if (isE2E) {
+    // In E2E mode, return a mocked session profile
+    const { headers } = await import("next/headers"); // Import dynamically for server context
+    const pathname = headers().get("x-invoke-path") || "/"; // Get pathname for role inference
+
+    let role: AppRole = "jobseeker"; // Default role
+
+    if (pathname.startsWith("/employer")) {
+      role = "employer";
+    } else if (pathname.startsWith("/admin")) {
+      role = "admin";
+    }
+
+    const e2eProfile: SessionProfile = {
+      id: "e2e-user-id",
+      email: "e2e@test.local",
+      full_name: "E2E Test User",
+      role: role,
+      emailVerified: true,
+    };
+
+    return { userId: e2eProfile.id, profile: e2eProfile };
+  }
+
   try {
     const idToken = (await cookies()).get("firebase_id_token")?.value;
 

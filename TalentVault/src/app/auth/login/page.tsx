@@ -41,6 +41,12 @@ function LoginForm() {
   };
 
   useEffect(() => {
+    // E2E Bypass: Immediately redirect to dashboard
+    if (process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === "true") {
+      router.replace("/jobseeker"); // Redirect to a default authenticated route
+      return; // Prevent further execution in E2E mode
+    }
+
     // Handle magic link sign-in on component mount
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem("emailForSignIn");
