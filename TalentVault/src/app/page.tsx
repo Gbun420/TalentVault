@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="space-y-14">
-      <section className="bg-white shadow-sm">
+      <section className="glass-panel shadow-sm">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-14 lg:flex-row lg:items-center lg:py-16">
           <div className="flex-1 space-y-4">
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">TalentVault</p>
@@ -28,7 +28,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="glass-panel">
         <div className="mx-auto max-w-5xl space-y-4 px-6">
           <h2 className="text-2xl font-semibold text-slate-900">Why job ads and recruiters no longer work</h2>
           <ul className="space-y-2 text-slate-700">
@@ -48,7 +48,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="glass-panel">
         <div className="mx-auto grid max-w-5xl gap-4 px-6 sm:grid-cols-3">
           <ValueCard title="Search Profiles instantly" body="Browse verified local profiles without posting a job." />
           <ValueCard title="Unlock only when ready" body="See contact details only when you choose to unlock." />
@@ -56,11 +56,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white">
-        <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-slate-50 px-6 py-6 shadow-sm">
+      <section className="glass-panel">
+        <div className="mx-auto max-w-5xl rounded-xl border border-white/60 bg-white/50 px-6 py-6 shadow-sm backdrop-blur-lg">
           <h3 className="text-lg font-semibold text-slate-900">Why TalentVault is faster and cheaper</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <div className="rounded-lg border border-white/60 bg-white/60 p-4 backdrop-blur-lg">
               <p className="text-sm font-semibold text-slate-800">Traditional hiring:</p>
               <ul className="mt-2 space-y-1 text-sm text-slate-700">
                 <li>• Pay upfront</li>
@@ -68,7 +68,7 @@ export default function Home() {
                 <li>• No guarantee</li>
               </ul>
             </div>
-            <div className="rounded-lg border border-blue-200 bg-white p-4">
+            <div className="rounded-lg border border-white/70 bg-white/70 p-4 backdrop-blur-lg">
               <p className="text-sm font-semibold text-slate-900">TalentVault:</p>
               <ul className="mt-2 space-y-1 text-sm text-slate-800">
                 <li>• €0 to browse</li>
@@ -80,7 +80,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-slate-50">
+      <section className="glass-panel">
         <div className="mx-auto max-w-5xl px-6 py-6 space-y-2">
           <h4 className="text-base font-semibold text-slate-900">Trust and safety</h4>
           <ul className="grid gap-2 text-sm text-slate-700 sm:grid-cols-2 md:grid-cols-4">
@@ -92,7 +92,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="glass-panel">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-10 text-center">
           <h2 className="text-3xl font-semibold text-slate-900">Local hiring shouldn’t take weeks.</h2>
           <Link href="/employer" className="btn btn-primary text-base">
@@ -106,7 +106,7 @@ export default function Home() {
 
 function ValueCard({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="card p-5">
       <p className="text-base font-semibold text-slate-900">{title}</p>
       <p className="mt-2 text-sm text-slate-600">{body}</p>
     </div>

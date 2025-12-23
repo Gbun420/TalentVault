@@ -1,9 +1,31 @@
 @import "tailwindcss";
 
+:root {
+  --aurora-center: #f0f9ff;
+  --aurora-edge: #e0e7ff;
+  --glass-base: rgba(255, 255, 255, 0.6);
+  --glass-sheen: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 4px 24px -1px rgba(15, 44, 79, 0.06);
+}
+
 body {
-  background: #f8fafc;
+  background: radial-gradient(circle at top, var(--aurora-center), var(--aurora-edge));
   color: #0f172a;
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+.aurora-bg {
+  background: radial-gradient(circle at top, var(--aurora-center), var(--aurora-edge));
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 a {
@@ -11,10 +33,22 @@ a {
 }
 
 .card {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background:
+    linear-gradient(135deg, var(--glass-sheen), rgba(255, 255, 255, 0)),
+    var(--glass-base);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transform: translateZ(0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px -1px rgba(15, 44, 79, 0.12);
+  border-color: rgba(255, 255, 255, 0.9);
 }
 
 .badge {

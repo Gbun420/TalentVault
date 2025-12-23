@@ -431,7 +431,7 @@ export default function JobseekerProfileForm({
         ) : (
           <div className="space-y-4">
             {experiences.map((exp, idx) => (
-              <div key={idx} className="rounded-lg border border-slate-200 p-4">
+              <div key={idx} className="card p-4">
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field label="Job title">
                     <input

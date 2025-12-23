@@ -28,11 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <meta httpEquiv="Content-Security-Policy" content="font-src 'self' data: https://r2cdn.perplexity.ai *.vercel.com *.gstatic.com vercel.live; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live;" />
-      </head>
+      <head />
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-slate-50 text-slate-900 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} aurora-bg min-h-screen text-slate-900 antialiased`}
       >
         <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

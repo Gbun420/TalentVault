@@ -63,7 +63,7 @@ export default function AdminModerationBoard({ profiles }: Props) {
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {items.map((profile) => (
-          <div key={profile.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div key={profile.id} className="card p-5">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-500">
