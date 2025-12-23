@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { env } from "@/lib/env"; // Corrected import
-import { AppRole, roleHome } from "@/lib/auth-constants"; // Import AppRole and roleHome
+import { authAdmin, dbAdmin } from "@/lib/firebase-admin";
+import { AppRole, roleHome } from "@/lib/auth-constants";
 
 const jobseekerPrefixes = ["/jobseeker"];
 const employerPrefixes = ["/employer"];
@@ -18,7 +17,7 @@ export async function middleware(req: NextRequest) {
     // Add CSP headers to allow Next.js inline scripts
     res.headers.set(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://vercel.live;"
+      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.firebaseio.com https://vercel.live;"
     );
 
     // Skip static and public assets
@@ -26,69 +25,51 @@ export async function middleware(req: NextRequest) {
       return res;
     }
 
-    const supabase = createServerClient(
-      env.supabaseUrl, // Corrected env var
-      env.supabaseAnonKey, // Corrected env var
-      {
-        cookies: {
-          getAll() {
-            return req.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => req.cookies.set(name, value))
-            cookiesToSet.forEach(({ name, value, options }) => res.cookies.set(name, value))
-          },
-        },
+    // Get the session token from cookies
+    const sessionCookie = req.cookies.get('__session')?.value;
+
+    const requireRole = async (allowed: AppRole[]) => {
+      if (!sessionCookie) {
+        return NextResponse.redirect(new URL(`/auth/login?redirectTo=${encodeURIComponent(path)}`, req.url));
       }
-    );
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      try {
+        // Verify the session cookie
+        const decodedClaims = await authAdmin.verifySessionCookie(sessionCookie, true);
+        
+        // Get user profile from Firestore
+        const profileDoc = await dbAdmin.collection('profiles').doc(decodedClaims.uid).get();
+        const profile = profileDoc.data();
+        const role = profile?.role as AppRole | undefined;
 
-    const redirectTo = encodeURIComponent(path);
-
-    const requireRole = async (allowed: AppRole[]) => { // Using AppRole type
-      if (!session) {
-        return NextResponse.redirect(new URL(`/auth/login?redirectTo=${redirectTo}`, req.url));
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .is("deleted_at", null)
-        .maybeSingle();
-      const role = profile?.role as AppRole | undefined; // Using AppRole type
-
-      if (!role || !allowed.includes(role)) {
-        // Redirect to the user's actual role homepage if they try to access a forbidden route
-        // This also prevents infinite redirects if they are already on their own role's page.
-        const userHome = role ? roleHome[role] : "/auth/login";
-        if (path !== userHome) { // Prevent redirecting to current page
-           return NextResponse.redirect(new URL(userHome, req.url));
-        } else {
-          // If they are on their own homepage but something went wrong (e.g. no session),
-          // or tried to access a protected page where their role is not allowed and there is no userHome
-          return NextResponse.redirect(new URL("/auth/login", req.url));
+        if (!role || !allowed.includes(role)) {
+          const userHome = role ? roleHome[role] : "/auth/login";
+          if (path !== userHome) {
+            return NextResponse.redirect(new URL(userHome, req.url));
+          } else {
+            return NextResponse.redirect(new URL("/auth/login", req.url));
+          }
         }
+        return res;
+      } catch (error) {
+        console.error("Firebase auth error:", error);
+        return NextResponse.redirect(new URL(`/auth/login?redirectTo=${encodeURIComponent(path)}`, req.url));
       }
-      return res;
     };
 
     if (isProtected(path, adminPrefixes)) {
       return requireRole(["admin"]);
     }
     if (isProtected(path, employerPrefixes)) {
-      return requireRole(["employer"]); // Removed 'admin'
+      return requireRole(["employer"]);
     }
     if (isProtected(path, jobseekerPrefixes)) {
-      return requireRole(["jobseeker"]); // Removed 'admin'
+      return requireRole(["jobseeker"]);
     }
 
     return res;
   } catch (error) {
     console.error("Middleware error:", error);
-    // Return a generic error response to prevent the site from crashing
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

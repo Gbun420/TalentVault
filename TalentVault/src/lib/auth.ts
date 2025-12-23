@@ -23,7 +23,7 @@ export async function getSessionProfile(): Promise<{
   profile: SessionProfile | null;
 }> {
   try {
-    const idToken = cookies().get("firebase_id_token")?.value;
+    const idToken = (await cookies()).get("firebase_id_token")?.value;
 
     if (!idToken) {
       return { userId: null, profile: null };
@@ -44,7 +44,7 @@ export async function getSessionProfile(): Promise<{
       email: decodedToken.email || "",
       full_name: profileData.full_name,
       role: profileData.role,
-      emailVerified: decodedToken.email_verified,
+      emailVerified: decodedToken.email_verified || false,
     };
 
     return { userId, profile };

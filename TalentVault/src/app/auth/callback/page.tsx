@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { AppRole, roleHome } from "@/lib/auth-constants";
 import { env } from "@/lib/env";
-import { authAdmin, dbAdmin } from "@/lib/firebase-admin"; // Import Firebase Admin
+import { authAdmin, dbAdmin } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
 
 export default async function AuthCallbackPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
   const mode = searchParams.mode as string;
@@ -18,19 +19,18 @@ export default async function AuthCallbackPage({ searchParams }: { searchParams:
     switch (mode) {
       case "verifyEmail": {
         // Verify email and sign in the user
-        const userCredential = await authAdmin.verifyAndProcessEmailAction(oobCode);
-        const user = userCredential.user;
-
-        if (user) {
+        const userRecord = await authAdmin.verifyIdToken(oobCode);
+        
+        if (userRecord) {
           // Ensure profile exists in Firestore (from signup) or create it if not
-          const profileRef = dbAdmin.collection("profiles").doc(user.uid);
+          const profileRef = dbAdmin.collection("profiles").doc(userRecord.uid);
           const profileSnap = await profileRef.get();
 
           if (!profileSnap.exists) {
             await profileRef.set({
-              full_name: fullNameFromSignup || user.displayName || user.email, // Use passed full_name or user.displayName
-              email: user.email,
-              role: roleFromSignup, // Use passed role
+              full_name: fullNameFromSignup || userRecord.displayName || userRecord.email,
+              email: userRecord.email,
+              role: roleFromSignup,
               createdAt: new Date().toISOString(),
               emailVerified: true,
             });
@@ -39,9 +39,21 @@ export default async function AuthCallbackPage({ searchParams }: { searchParams:
             await profileRef.update({ emailVerified: true });
           }
 
+          // Create a session cookie for the user
+          const sessionCookie = await authAdmin.createSessionCookie(oobCode, { expiresIn: 60 * 60 * 24 * 5 * 1000 }); // 5 days
+          
+          // Set the session cookie
+          const cookieStore = await cookies();
+          cookieStore.set('__session', sessionCookie, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 5, // 5 days
+            path: '/',
+          });
+          
           // Redirect to role-specific homepage
-          const finalRole = profileSnap.exists ? profileSnap.data()?.role as AppRole : roleFromSignup;
-          redirect(roleHome[finalRole] || "/");
+          redirect(roleHome[roleFromSignup] || "/");
         }
         break;
       }

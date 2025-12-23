@@ -6,12 +6,10 @@ import { env } from "@/lib/env";
 // This prevents multiple initializations in Next.js development mode
 if (!admin.apps.length) {
   // Ensure required environment variables are present before initialization
-  // We use requireEnv here because these are critical for Admin SDK
-  env.requireEnv(
-    "FIREBASE_PROJECT_ID",
-    "FIREBASE_CLIENT_EMAIL",
-    "FIREBASE_PRIVATE_KEY"
-  );
+  // We check these manually because they are critical for Admin SDK
+  if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_CLIENT_EMAIL || !env.FIREBASE_PRIVATE_KEY) {
+    throw new Error("Missing required Firebase Admin SDK environment variables. Please check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY.");
+  }
 
   const serviceAccount = {
     projectId: env.FIREBASE_PROJECT_ID,

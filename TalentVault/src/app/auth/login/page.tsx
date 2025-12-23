@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
-import { AppRole } from "@/lib/auth-constants";
+import { roleHome, AppRole } from "@/lib/auth-constants";
 import { env } from "@/lib/env"; // Import the env object
 import {
   signInWithEmailAndPassword,
