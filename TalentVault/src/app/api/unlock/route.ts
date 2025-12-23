@@ -1,23 +1,25 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { authAdmin, dbAdmin } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    // Get session cookie
+    const sessionCookie = (await cookies()).get('__session')?.value;
+    
+    if (!sessionCookie) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .is("deleted_at", null)
-      .maybeSingle();
+    // Verify session cookie
+    const decodedClaims = await authAdmin.verifySessionCookie(sessionCookie, true);
+    if (!decodedClaims) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Get user profile from Firestore
+    const profileDoc = await dbAdmin.collection('profiles').doc(decodedClaims.uid).get();
+    const profile = profileDoc.data();
 
     if (!profile || (profile.role !== "employer" && profile.role !== "admin")) {
       return NextResponse.json({ error: "Not allowed" }, { status: 403 });
@@ -29,26 +31,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "jobseekerId required" }, { status: 400 });
     }
 
-    const { data: existing } = await supabase
-      .from("unlocked_contacts")
-      .select("id")
-      .eq("employer_id", user.id)
-      .eq("jobseeker_id", jobseekerId)
-      .maybeSingle();
-    if (existing) {
+    const existingQuery = await dbAdmin
+      .collection("unlocked_contacts")
+      .where("employer_id", "==", decodedClaims.uid)
+      .where("jobseeker_id", "==", jobseekerId)
+      .limit(1)
+      .get();
+    
+    if (!existingQuery.empty) {
       return NextResponse.json({ ok: true, alreadyUnlocked: true });
     }
 
     // Admins can unlock freely
     if (profile.role !== "admin") {
       // Check active subscription
-      const { data: subscription } = await supabase
-        .from("employer_subscriptions")
-        .select("plan_code, status, current_period_start, current_period_end")
-        .eq("employer_id", user.id)
-        .order("updated_at", { ascending: false })
+      const subscriptionQuery = await dbAdmin
+        .collection("employer_subscriptions")
+        .where("employer_id", "==", decodedClaims.uid)
+        .orderBy("updated_at", "desc")
         .limit(1)
-        .maybeSingle();
+        .get();
+
+      const subscription = subscriptionQuery.empty ? null : subscriptionQuery.docs[0].data();
 
       const hasActiveSub =
         subscription &&
@@ -64,25 +68,27 @@ export async function POST(request: Request) {
 
       if (subscription.plan_code === "limited") {
         // Check allowed unlocks for current period
-        const { data: plan } = await supabase
-          .from("subscription_plans")
-          .select("unlocks_included")
-          .eq("plan_code", "limited")
-          .maybeSingle();
+        const planDoc = await dbAdmin
+          .collection("subscription_plans")
+          .doc("limited")
+          .get();
 
+        const plan = planDoc.exists ? planDoc.data() : null;
         const unlockLimit = plan?.unlocks_included ?? 0;
+        
         const start = subscription.current_period_start
           ? new Date(subscription.current_period_start)
           : new Date(new Date().setMonth(new Date().getMonth() - 1));
         const end = subscription.current_period_end ? new Date(subscription.current_period_end) : new Date();
-        const { count } = await supabase
-          .from("unlocked_contacts")
-          .select("id", { count: "exact", head: true })
-          .eq("employer_id", user.id)
-          .gte("created_at", start.toISOString())
-          .lte("created_at", end.toISOString());
+        
+        const unlocksQuery = await dbAdmin
+          .collection("unlocked_contacts")
+          .where("employer_id", "==", decodedClaims.uid)
+          .where("created_at", ">=", start.toISOString())
+          .where("created_at", "<=", end.toISOString())
+          .get();
 
-        if (unlockLimit > 0 && count !== null && count >= unlockLimit) {
+        if (unlockLimit > 0 && unlocksQuery.size >= unlockLimit) {
           return NextResponse.json(
             { error: "Unlock limit reached for this billing period." },
             { status: 402 }
@@ -91,13 +97,13 @@ export async function POST(request: Request) {
       }
     }
 
-    const { error } = await supabaseAdmin
-      .from("unlocked_contacts")
-      .upsert({ employer_id: user.id, jobseeker_id: jobseekerId });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+    await dbAdmin
+      .collection("unlocked_contacts")
+      .add({ 
+        employer_id: decodedClaims.uid, 
+        jobseeker_id: jobseekerId,
+        created_at: new Date().toISOString()
+      });
 
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
