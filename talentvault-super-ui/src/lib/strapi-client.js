@@ -1,7 +1,10 @@
 const API_BASE = process.env.NEXT_PUBLIC_STRAPI_API || 'http://localhost:1337/api';
 
-const fetchJson = async (path) => {
-  const response = await fetch(`${API_BASE}${path}`);
+const fetchJson = async (path, options = {}) => {
+  const response = await fetch(`${API_BASE}${path}`, {
+    cache: 'no-store',
+    ...options,
+  });
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
