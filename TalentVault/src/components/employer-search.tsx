@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { env } from "@/lib/env";
 import { collection, query, where, orderBy, limit, getDocs, type QueryConstraint } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
 type TalentVaultProfile = { // Renamed from CV
   id: string;
@@ -46,10 +46,19 @@ export default function EmployerSearch() {
   const [subscribing, setSubscribing] = useState<"limited" | "unlimited" | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const actionsDisabled = true;
+  const apiBaseUrl = env.apiBaseUrl ? env.apiBaseUrl.replace(/\/$/, "") : "";
+  const apiAvailable = Boolean(apiBaseUrl);
 
   const getErrorMessage = (err: unknown) =>
     err instanceof Error ? err.message : "Something went wrong";
+
+  const requireToken = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("You must be signed in.");
+    }
+    return user.getIdToken();
+  };
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -162,16 +171,24 @@ export default function EmployerSearch() {
   };
 
   const unlock = async (jobseekerId: string) => {
-    if (actionsDisabled) {
-      setError("Checkout and unlock actions are disabled in the Spark static build.");
+    if (!apiAvailable) {
+      setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
       setUnlocking(null);
       return;
     }
     setUnlocking(jobseekerId);
     setError(null);
-    const res = await fetch("/api/checkout", {
+    let token = "";
+    try {
+      token = await requireToken();
+    } catch (err) {
+      setError(getErrorMessage(err));
+      setUnlocking(null);
+      return;
+    }
+    const res = await fetch(`${apiBaseUrl}/api/checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ mode: "unlock", jobseekerId }),
     });
     const json = await res.json();
@@ -200,16 +217,24 @@ export default function EmployerSearch() {
   }, []);
 
   const startSubscription = async (subscriptionType: "limited" | "unlimited") => {
-    if (actionsDisabled) {
-      setError("Subscriptions are disabled in the Spark static build.");
+    if (!apiAvailable) {
+      setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
       setSubscribing(null);
       return;
     }
     setSubscribing(subscriptionType);
     setError(null);
-    const res = await fetch("/api/checkout", {
+    let token = "";
+    try {
+      token = await requireToken();
+    } catch (err) {
+      setError(getErrorMessage(err));
+      setSubscribing(null);
+      return;
+    }
+    const res = await fetch(`${apiBaseUrl}/api/checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ mode: "subscription", subscriptionType }),
     });
     const json = await res.json();
@@ -226,14 +251,22 @@ export default function EmployerSearch() {
   };
 
   const trySubscriptionUnlock = async (jobseekerId: string) => {
-    if (actionsDisabled) {
-      setError("Unlocks are disabled in the Spark static build.");
+    if (!apiAvailable) {
+      setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
       setUnlocking(null);
       return null;
     }
-    const res = await fetch("/api/unlock", {
+    let token = "";
+    try {
+      token = await requireToken();
+    } catch (err) {
+      setError(getErrorMessage(err));
+      setUnlocking(null);
+      return null;
+    }
+    const res = await fetch(`${apiBaseUrl}/api/unlock`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ jobseekerId }),
     });
     const json = await res.json();
@@ -290,22 +323,22 @@ export default function EmployerSearch() {
           Choose a subscription or pay-per-unlock. Limited plans include a fixed number of unlocks;
           unlimited provides full monthly access.
         </p>
-        {actionsDisabled ? (
+        {!apiAvailable ? (
           <p className="mt-2 text-xs text-amber-700">
-            Checkout and unlock actions require server routes and are disabled on the Spark (static) deployment.
+            Checkout and unlock require the API service. Set NEXT_PUBLIC_API_BASE_URL for this deployment.
           </p>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             onClick={() => startSubscription("limited")}
-            disabled={actionsDisabled || subscribing !== null}
+            disabled={!apiAvailable || subscribing !== null}
             className="btn btn-primary"
           >
             {subscribing === "limited" ? "Redirecting..." : "Subscribe (Limited unlocks)"}
           </button>
           <button
             onClick={() => startSubscription("unlimited")}
-            disabled={actionsDisabled || subscribing !== null}
+            disabled={!apiAvailable || subscribing !== null}
             className="btn btn-secondary"
           >
             {subscribing === "unlimited" ? "Redirecting..." : "Subscribe (Unlimited)"}
@@ -442,7 +475,7 @@ export default function EmployerSearch() {
                         }
                         await unlock(profile.id);
                       }}
-                      disabled={actionsDisabled || unlocking === profile.id}
+                      disabled={!apiAvailable || unlocking === profile.id}
                       className="btn btn-primary text-xs"
                     >
                       {unlocking === profile.id ? "Unlocking..." : "Unlock contact"}

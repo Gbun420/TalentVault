@@ -9,6 +9,8 @@ export const env = {
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, // Optional
   NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID, // Optional
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
 
   // Firebase Admin (server-side)
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID!,
@@ -27,6 +29,7 @@ export const env = {
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
     "http://localhost:3000",
+  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || "",
 };
 
 export function requireEnv(...keys: EnvKey[]) {
