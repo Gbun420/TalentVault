@@ -1,4 +1,9 @@
-const defaultOrigins = ['http://localhost:8080', 'http://127.0.0.1:8080'];
+const defaultOrigins = [
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+];
 const extraOrigins = process.env.TALENTVAULT_FRONTEND_ORIGINS
   ? process.env.TALENTVAULT_FRONTEND_ORIGINS.split(',').map((origin) => origin.trim())
   : [];

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TalentVault Talent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/config.js"></script>
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body data-page="talent">
+    <div class="site">
+      <header class="nav">
+        <div class="logo">
+          <div class="logo-mark">TV</div>
+          <div>
+            <div>TalentVault</div>
+            <div class="result-count">Signal driven hiring</div>
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="TalentVault.html" data-nav="home">Home</a>
+          <a href="jobs.html" data-nav="jobs">Jobs</a>
+          <a href="talent.html" data-nav="talent">Talent</a>
+          <a href="companies.html" data-nav="companies">Companies</a>
+          <a href="insights.html" data-nav="insights">Insights</a>
+        </nav>
+        <div class="nav-cta">
+          <a class="btn ghost" href="http://localhost:1337/admin" target="_blank" rel="noreferrer">Admin</a>
+          <a class="btn primary" href="jobs.html">Post a Role</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="page-hero">
+          <div>
+            <div class="eyebrow">Talent network</div>
+            <h1>Talent that ships, leads, and scales.</h1>
+            <p class="lead">
+              Profiles are verified by skills, availability, and experience. Build short lists with confidence.
+            </p>
+          </div>
+          <div class="callout">
+            <h3>Talent signals</h3>
+            <p>Availability and focus areas are updated by candidates and verified by the network.</p>
+            <div class="result-count" id="talent-results">0 profiles</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="filters">
+            <input id="talent-search" type="search" placeholder="Search by name, headline, or skill" />
+            <select id="talent-availability">
+              <option value="">All availability</option>
+              <option value="immediate">Immediate</option>
+              <option value="two_weeks">Two weeks</option>
+              <option value="one_month">One month</option>
+              <option value="three_months">Three months</option>
+              <option value="open">Open</option>
+            </select>
+            <select disabled>
+              <option>Skills filter coming soon</option>
+            </select>
+          </div>
+          <div class="grid talent" id="talent-grid">
+            <div class="loading">Loading talent...</div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>TalentVault talent network</div>
+        <div class="footer-links">
+          <a href="TalentVault.html">Home</a>
+          <a href="jobs.html">Jobs</a>
+          <a href="companies.html">Companies</a>
+          <a href="insights.html">Insights</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

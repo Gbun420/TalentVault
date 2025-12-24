@@ -58,6 +58,16 @@
       "type": "component",
       "component": "shared.salary-range"
     },
+    "resumeScore": {
+      "type": "decimal",
+      "default": 0
+    },
+    "matchAnalysis": {
+      "type": "json"
+    },
+    "keywordMatches": {
+      "type": "json"
+    },
     "profilePhoto": {
       "type": "media",
       "multiple": false,

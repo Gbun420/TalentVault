@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TalentVault Jobs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/config.js"></script>
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body data-page="jobs">
+    <div class="site">
+      <header class="nav">
+        <div class="logo">
+          <div class="logo-mark">TV</div>
+          <div>
+            <div>TalentVault</div>
+            <div class="result-count">Signal driven hiring</div>
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="TalentVault.html" data-nav="home">Home</a>
+          <a href="jobs.html" data-nav="jobs">Jobs</a>
+          <a href="talent.html" data-nav="talent">Talent</a>
+          <a href="companies.html" data-nav="companies">Companies</a>
+          <a href="insights.html" data-nav="insights">Insights</a>
+        </nav>
+        <div class="nav-cta">
+          <a class="btn ghost" href="http://localhost:1337/admin" target="_blank" rel="noreferrer">Admin</a>
+          <a class="btn primary" href="jobs.html">Post a Role</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="page-hero">
+          <div>
+            <div class="eyebrow">Open roles</div>
+            <h1>Curated roles for high impact teams.</h1>
+            <p class="lead">
+              Explore roles across product, engineering, and design with verified signal on hiring velocity,
+              team stage, and growth.
+            </p>
+          </div>
+          <div class="callout">
+            <h3>Hiring snapshot</h3>
+            <p>Use filters to find roles that match your pace, location, and impact appetite.</p>
+            <div class="result-count" id="jobs-results">0 roles</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="filters">
+            <input id="job-search" type="search" placeholder="Search roles, companies, or skills" />
+            <select id="job-type">
+              <option value="">All types</option>
+              <option value="full_time">Full time</option>
+              <option value="part_time">Part time</option>
+              <option value="contract">Contract</option>
+              <option value="internship">Internship</option>
+              <option value="temporary">Temporary</option>
+            </select>
+            <select id="job-remote">
+              <option value="">All locations</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">Onsite</option>
+            </select>
+          </div>
+          <div class="grid jobs" id="jobs-grid">
+            <div class="loading">Loading roles...</div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>TalentVault job board</div>
+        <div class="footer-links">
+          <a href="TalentVault.html">Home</a>
+          <a href="talent.html">Talent</a>
+          <a href="companies.html">Companies</a>
+          <a href="insights.html">Insights</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

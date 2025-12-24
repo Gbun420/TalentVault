@@ -65,6 +65,27 @@ Example:
 TALENTVAULT_FRONTEND_ORIGINS=https://your-app.netlify.app,https://your-app.vercel.app
 ```
 
+## TalentVault React dashboard (Volt-inspired)
+
+The admin dashboard lives in `talentvault-frontend`.
+
+```
+cd talentvault-frontend
+npm install
+npm start
+```
+
+Configure the API base via `.env`:
+
+```
+REACT_APP_STRAPI_API=http://localhost:1337/api
+```
+
+## Resume Matcher integration
+
+TalentVault can call the Resume Matcher backend to score resumes against jobs. Setup instructions live in:
+`docs/resume-matcher.md`.
+
 ### `develop`
 
 Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)

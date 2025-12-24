@@ -608,6 +608,7 @@ export interface ApiCandidateProfileCandidateProfile
     featured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     fullName: Schema.Attribute.String & Schema.Attribute.Required;
     headline: Schema.Attribute.String;
+    keywordMatches: Schema.Attribute.JSON;
     links: Schema.Attribute.Component<'profile.social-link', true>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -616,6 +617,7 @@ export interface ApiCandidateProfileCandidateProfile
     > &
       Schema.Attribute.Private;
     location: Schema.Attribute.Component<'shared.location', false>;
+    matchAnalysis: Schema.Attribute.JSON;
     moderationStatus: Schema.Attribute.Enumeration<
       ['pending', 'approved', 'flagged', 'suspended']
     > &
@@ -623,6 +625,7 @@ export interface ApiCandidateProfileCandidateProfile
     profilePhoto: Schema.Attribute.Media<'images'>;
     publishedAt: Schema.Attribute.DateTime;
     resume: Schema.Attribute.Media<'files'>;
+    resumeScore: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     skills: Schema.Attribute.Relation<'manyToMany', 'api::skill.skill'>;
     slug: Schema.Attribute.UID<'fullName'>;
     summary: Schema.Attribute.Blocks;
