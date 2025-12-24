@@ -1,0 +1,117 @@
+{
+  "kind": "collectionType",
+  "collectionName": "jobs",
+  "info": {
+    "singularName": "job",
+    "pluralName": "jobs",
+    "displayName": "Job"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title"
+    },
+    "description": {
+      "type": "blocks"
+    },
+    "responsibilities": {
+      "type": "blocks"
+    },
+    "requirements": {
+      "type": "blocks"
+    },
+    "benefits": {
+      "type": "text"
+    },
+    "employmentType": {
+      "type": "enumeration",
+      "enum": [
+        "full_time",
+        "part_time",
+        "contract",
+        "internship",
+        "temporary"
+      ],
+      "default": "full_time"
+    },
+    "experienceLevel": {
+      "type": "enumeration",
+      "enum": [
+        "junior",
+        "mid",
+        "senior",
+        "lead",
+        "director"
+      ],
+      "default": "mid"
+    },
+    "remoteType": {
+      "type": "enumeration",
+      "enum": [
+        "onsite",
+        "hybrid",
+        "remote"
+      ],
+      "default": "hybrid"
+    },
+    "location": {
+      "type": "component",
+      "component": "shared.location"
+    },
+    "salaryRange": {
+      "type": "component",
+      "component": "shared.salary-range"
+    },
+    "skills": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::skill.skill",
+      "inversedBy": "jobs"
+    },
+    "company": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::company.company",
+      "inversedBy": "jobs"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "open",
+        "closed",
+        "filled"
+      ],
+      "default": "open"
+    },
+    "postedAt": {
+      "type": "datetime"
+    },
+    "applicationDeadline": {
+      "type": "date"
+    },
+    "applyUrl": {
+      "type": "string"
+    },
+    "applyEmail": {
+      "type": "email"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "applications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::application.application",
+      "mappedBy": "job"
+    }
+  }
+}

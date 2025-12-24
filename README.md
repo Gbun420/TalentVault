@@ -24,6 +24,47 @@ docker compose up
 
 The admin panel will be available at http://localhost:1337/admin.
 
+## TalentVault frontend
+
+Build the static frontend bundle:
+
+```
+npm run frontend:build
+```
+
+Preview the bundle locally:
+
+```
+npm run frontend:serve
+```
+
+By default the frontend calls `http://localhost:1337/api`. Override it during build:
+
+```
+TALENTVAULT_API_BASE=https://your-strapi-domain/api npm run frontend:build
+```
+
+## Frontend deployment
+
+Netlify:
+- Build command: `npm run frontend:build`
+- Publish directory: `frontend-dist`
+- Env: `TALENTVAULT_API_BASE=https://your-strapi-domain/api`
+
+Vercel:
+- Build command: `npm run frontend:build`
+- Output directory: `frontend-dist`
+- Env: `TALENTVAULT_API_BASE=https://your-strapi-domain/api`
+
+## Strapi CORS for production
+
+Set `TALENTVAULT_FRONTEND_ORIGINS` to a comma-separated list of frontend origins.
+Example:
+
+```
+TALENTVAULT_FRONTEND_ORIGINS=https://your-app.netlify.app,https://your-app.vercel.app
+```
+
 ### `develop`
 
 Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)

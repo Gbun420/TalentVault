@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_profile_work_experiences",
+  "info": {
+    "displayName": "Work Experience",
+    "icon": "briefcase"
+  },
+  "attributes": {
+    "company": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "startDate": {
+      "type": "date"
+    },
+    "endDate": {
+      "type": "date"
+    },
+    "isCurrent": {
+      "type": "boolean",
+      "default": false
+    },
+    "description": {
+      "type": "blocks"
+    }
+  }
+}

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TalentVault - Signal Driven Hiring</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/config.js"></script>
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body data-page="home">
+    <div class="site">
+      <header class="nav">
+        <div class="logo">
+          <div class="logo-mark">TV</div>
+          <div>
+            <div>TalentVault</div>
+            <div class="result-count">Signal driven hiring</div>
+          </div>
+        </div>
+        <nav class="nav-links">
+          <a href="TalentVault.html" data-nav="home">Home</a>
+          <a href="jobs.html" data-nav="jobs">Jobs</a>
+          <a href="talent.html" data-nav="talent">Talent</a>
+          <a href="companies.html" data-nav="companies">Companies</a>
+          <a href="insights.html" data-nav="insights">Insights</a>
+        </nav>
+        <div class="nav-cta">
+          <a class="btn ghost" href="http://localhost:1337/admin" target="_blank" rel="noreferrer">Admin</a>
+          <a class="btn primary" href="jobs.html">Post a Role</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div>
+            <div class="eyebrow">TalentVault network</div>
+            <h1>Hire with signal, not noise.</h1>
+            <p class="lead">
+              TalentVault curates high impact talent, curated companies, and real time hiring signals so you can
+              move from discovery to decision faster.
+            </p>
+            <div class="hero-actions">
+              <a class="btn primary" href="jobs.html">Explore roles</a>
+              <a class="btn secondary" href="talent.html">Meet talent</a>
+            </div>
+          </div>
+          <div class="hero-panel">
+            <h3>Vault pulse</h3>
+            <div class="hero-metrics">
+              <div class="metric">
+                <span>Verified pipelines</span>
+                <strong>Weekly</strong>
+              </div>
+              <div class="metric">
+                <span>Hiring velocity</span>
+                <strong>Measured</strong>
+              </div>
+              <div class="metric">
+                <span>Signals tracked</span>
+                <strong>Live</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">The vault stack</h2>
+              <p class="section-subtitle">
+                A closed loop marketplace that blends hiring intelligence with verified talent data.
+              </p>
+            </div>
+          </div>
+          <div class="grid three">
+            <article class="card">
+              <h3>Signal verified profiles</h3>
+              <p>Every profile is mapped to skill taxonomies, availability, and outcome signals.</p>
+            </article>
+            <article class="card">
+              <h3>Curated opportunity flow</h3>
+              <p>Roles flow through a quality filter with company, impact, and growth context.</p>
+            </article>
+            <article class="card">
+              <h3>Decisions in days</h3>
+              <p>Move from short list to offer faster with aligned data and transparent timelines.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Live network stats</h2>
+              <p class="section-subtitle">The TalentVault marketplace updates whenever new data lands.</p>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat-card">
+              <span class="eyebrow">Open roles</span>
+              <strong id="jobs-count">-</strong>
+              <span class="result-count">Updated daily</span>
+            </div>
+            <div class="stat-card">
+              <span class="eyebrow">Talent profiles</span>
+              <strong id="talent-count">-</strong>
+              <span class="result-count">Verified and active</span>
+            </div>
+            <div class="stat-card">
+              <span class="eyebrow">Companies</span>
+              <strong id="companies-count">-</strong>
+              <span class="result-count">Growing teams</span>
+            </div>
+            <div class="stat-card">
+              <span class="eyebrow">Insights</span>
+              <strong id="insights-count">-</strong>
+              <span class="result-count">Fresh analysis</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Top skills in motion</h2>
+              <p class="section-subtitle">The highest demand capabilities across the marketplace.</p>
+            </div>
+          </div>
+          <div class="chip-row" id="skills-container">
+            <div class="loading">Loading skills...</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Featured roles</h2>
+              <p class="section-subtitle">High signal roles curated for the vault.</p>
+            </div>
+            <a class="btn ghost" href="jobs.html">View all roles</a>
+          </div>
+          <div class="grid jobs" id="home-jobs">
+            <div class="loading">Loading roles...</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Featured talent</h2>
+              <p class="section-subtitle">Profiles ready for fast moving teams and ambitious missions.</p>
+            </div>
+            <a class="btn ghost" href="talent.html">View all talent</a>
+          </div>
+          <div class="grid talent" id="home-talent">
+            <div class="loading">Loading talent...</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Companies in the vault</h2>
+              <p class="section-subtitle">Growing teams hiring with clarity and velocity.</p>
+            </div>
+            <a class="btn ghost" href="companies.html">View all companies</a>
+          </div>
+          <div class="grid companies" id="home-companies">
+            <div class="loading">Loading companies...</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Insights and analysis</h2>
+              <p class="section-subtitle">Signals, benchmarks, and hiring playbooks from the network.</p>
+            </div>
+            <a class="btn ghost" href="insights.html">View all insights</a>
+          </div>
+          <div class="grid articles" id="home-articles">
+            <div class="loading">Loading insights...</div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="page-hero">
+            <div>
+              <div class="eyebrow">TalentVault launch</div>
+              <h1>Build the hiring engine your team deserves.</h1>
+              <p class="lead">Use TalentVault to align leaders, recruiters, and candidates around shared data.</p>
+              <div class="hero-actions">
+                <a class="btn primary" href="companies.html">Partner with TalentVault</a>
+                <a class="btn secondary" href="insights.html">Read the playbook</a>
+              </div>
+            </div>
+            <div class="callout">
+              <h3>Quick start checklist</h3>
+              <p>Publish roles, approve profiles, and share insights to activate the marketplace.</p>
+              <div class="tag-row">
+                <span class="tag">Create roles</span>
+                <span class="tag">Invite talent</span>
+                <span class="tag">Enable insights</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>TalentVault demo experience</div>
+        <div class="footer-links">
+          <a href="jobs.html">Jobs</a>
+          <a href="talent.html">Talent</a>
+          <a href="companies.html">Companies</a>
+          <a href="insights.html">Insights</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

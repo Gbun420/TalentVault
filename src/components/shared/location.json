@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_shared_locations",
+  "info": {
+    "displayName": "Location",
+    "icon": "globe"
+  },
+  "attributes": {
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "required": true
+    },
+    "timezone": {
+      "type": "string"
+    }
+  }
+}

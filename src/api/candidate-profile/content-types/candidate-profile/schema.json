@@ -1,0 +1,126 @@
+{
+  "kind": "collectionType",
+  "collectionName": "candidate_profiles",
+  "info": {
+    "singularName": "candidate-profile",
+    "pluralName": "candidate-profiles",
+    "displayName": "Candidate Profile"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "fullName": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "fullName"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "blocks"
+    },
+    "location": {
+      "type": "component",
+      "component": "shared.location"
+    },
+    "skills": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::skill.skill",
+      "inversedBy": "candidates"
+    },
+    "yearsExperience": {
+      "type": "decimal"
+    },
+    "availability": {
+      "type": "enumeration",
+      "enum": [
+        "immediate",
+        "two_weeks",
+        "one_month",
+        "three_months",
+        "open"
+      ],
+      "default": "open"
+    },
+    "desiredSalary": {
+      "type": "component",
+      "component": "shared.salary-range"
+    },
+    "profilePhoto": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "resume": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "files"
+      ]
+    },
+    "links": {
+      "type": "component",
+      "component": "profile.social-link",
+      "repeatable": true
+    },
+    "workExperience": {
+      "type": "component",
+      "component": "profile.work-experience",
+      "repeatable": true
+    },
+    "education": {
+      "type": "component",
+      "component": "profile.education",
+      "repeatable": true
+    },
+    "visibility": {
+      "type": "enumeration",
+      "enum": [
+        "public",
+        "private",
+        "unlisted"
+      ],
+      "default": "public"
+    },
+    "moderationStatus": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "approved",
+        "flagged",
+        "suspended"
+      ],
+      "default": "pending"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "applications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::application.application",
+      "mappedBy": "candidate"
+    },
+    "unlocks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::contact-unlock.contact-unlock",
+      "mappedBy": "candidate"
+    }
+  }
+}

@@ -2,6 +2,5 @@
  * article router
  */
 
-import { factories } from '@strapi/strapi';
-
+const { factories } = require('@strapi/strapi');
 export default factories.createCoreRouter('api::article.article');

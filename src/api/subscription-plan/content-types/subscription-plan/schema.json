@@ -1,0 +1,61 @@
+{
+  "kind": "collectionType",
+  "collectionName": "subscription_plans",
+  "info": {
+    "singularName": "subscription-plan",
+    "pluralName": "subscription-plans",
+    "displayName": "Subscription Plan"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "code": {
+      "type": "string",
+      "unique": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "priceCents": {
+      "type": "integer"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "interval": {
+      "type": "enumeration",
+      "enum": [
+        "month",
+        "year"
+      ],
+      "default": "month"
+    },
+    "unlocksIncluded": {
+      "type": "integer"
+    },
+    "jobPostLimit": {
+      "type": "integer"
+    },
+    "featuredPosts": {
+      "type": "boolean",
+      "default": false
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "subscriptions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::subscription.subscription",
+      "mappedBy": "plan"
+    }
+  }
+}

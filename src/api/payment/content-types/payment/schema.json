@@ -1,0 +1,67 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payments",
+  "info": {
+    "singularName": "payment",
+    "pluralName": "payments",
+    "displayName": "Payment"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "company": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::company.company",
+      "inversedBy": "payments"
+    },
+    "candidate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::candidate-profile.candidate-profile"
+    },
+    "subscription": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subscription.subscription"
+    },
+    "amountCents": {
+      "type": "integer"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "paymentType": {
+      "type": "enumeration",
+      "enum": [
+        "subscription",
+        "unlock"
+      ]
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "succeeded",
+        "failed",
+        "refunded"
+      ],
+      "default": "pending"
+    },
+    "stripePaymentIntentId": {
+      "type": "string"
+    },
+    "stripeCheckoutSessionId": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "paidAt": {
+      "type": "datetime"
+    }
+  }
+}

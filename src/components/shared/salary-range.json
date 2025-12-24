@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_shared_salary_ranges",
+  "info": {
+    "displayName": "Salary Range",
+    "icon": "dollar-sign"
+  },
+  "attributes": {
+    "min": {
+      "type": "integer"
+    },
+    "max": {
+      "type": "integer"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "period": {
+      "type": "enumeration",
+      "enum": [
+        "hour",
+        "month",
+        "year"
+      ],
+      "default": "year"
+    },
+    "negotiable": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

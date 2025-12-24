@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "employers",
+  "info": {
+    "singularName": "employer",
+    "pluralName": "employers",
+    "displayName": "Employer"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "company": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::company.company",
+      "inversedBy": "employers"
+    },
+    "title": {
+      "type": "string"
+    },
+    "role": {
+      "type": "enumeration",
+      "enum": [
+        "owner",
+        "admin",
+        "recruiter"
+      ],
+      "default": "recruiter"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "lastActiveAt": {
+      "type": "datetime"
+    },
+    "contactUnlocks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::contact-unlock.contact-unlock",
+      "mappedBy": "employer"
+    }
+  }
+}
