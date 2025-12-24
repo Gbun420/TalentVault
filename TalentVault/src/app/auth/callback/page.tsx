@@ -1,26 +1,35 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function AuthCallbackPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const paramsRecord = await searchParams;
-  const mode = paramsRecord.mode as string | undefined;
-  const oobCode = paramsRecord.oobCode as string | undefined;
+import { Suspense, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-  if (!mode || !oobCode) {
-    redirect("/auth/login?message=Invalid verification link.");
-  }
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={<div className="card p-6 text-sm text-slate-600">Redirecting you back to login...</div>}
+    >
+      <AuthCallbackHandler />
+    </Suspense>
+  );
+}
 
-  const params = new URLSearchParams();
-  Object.entries(paramsRecord).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((v) => params.append(key, v));
-    } else if (value) {
-      params.append(key, value);
+function AuthCallbackHandler() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const redirectUrl = useMemo(() => {
+    const mode = searchParams.get("mode");
+    const oobCode = searchParams.get("oobCode");
+    if (!mode || !oobCode) {
+      return "/auth/login?message=Invalid verification link.";
     }
-  });
+    const params = new URLSearchParams(searchParams.toString());
+    return `/auth/login?${params.toString()}`;
+  }, [searchParams]);
 
-  redirect(`/auth/login?${params.toString()}`);
+  useEffect(() => {
+    router.replace(redirectUrl);
+  }, [redirectUrl, router]);
+
+  return <div className="card p-6 text-sm text-slate-600">Redirecting you back to login...</div>;
 }

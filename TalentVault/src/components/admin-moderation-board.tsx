@@ -22,8 +22,13 @@ export default function AdminModerationBoard({ profiles }: Props) {
   const [items, setItems] = useState(profiles);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const actionsDisabled = true;
 
   const mutate = async (id: string, action: "flag" | "unflag" | "hide" | "unhide") => {
+    if (actionsDisabled) {
+      setError("Moderation actions are disabled in the Spark static build.");
+      return;
+    }
     setLoadingId(id);
     setError(null);
     const res = await fetch("/api/admin/moderate", {
@@ -60,6 +65,11 @@ export default function AdminModerationBoard({ profiles }: Props) {
           directory.
         </p>
       </div>
+      {actionsDisabled ? (
+        <p className="mt-2 text-xs text-amber-700">
+          Moderation actions require server routes and are disabled on the Spark (static) deployment.
+        </p>
+      ) : null}
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {items.map((profile) => (
@@ -94,28 +104,28 @@ export default function AdminModerationBoard({ profiles }: Props) {
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
               <button
                 onClick={() => mutate(profile.id, "flag")}
-                disabled={loadingId === profile.id}
+                disabled={actionsDisabled || loadingId === profile.id}
                 className="btn btn-secondary text-xs"
               >
                 Flag
               </button>
               <button
                 onClick={() => mutate(profile.id, "unflag")}
-                disabled={loadingId === profile.id}
+                disabled={actionsDisabled || loadingId === profile.id}
                 className="btn btn-secondary text-xs"
               >
                 Unflag
               </button>
               <button
                 onClick={() => mutate(profile.id, "hide")}
-                disabled={loadingId === profile.id}
+                disabled={actionsDisabled || loadingId === profile.id}
                 className="btn btn-destructive text-xs"
               >
                 Hide (suspend)
               </button>
               <button
                 onClick={() => mutate(profile.id, "unhide")}
-                disabled={loadingId === profile.id}
+                disabled={actionsDisabled || loadingId === profile.id}
                 className="btn btn-secondary text-xs"
               >
                 Unhide

@@ -46,6 +46,7 @@ export default function EmployerSearch() {
   const [subscribing, setSubscribing] = useState<"limited" | "unlimited" | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const actionsDisabled = true;
 
   const getErrorMessage = (err: unknown) =>
     err instanceof Error ? err.message : "Something went wrong";
@@ -161,6 +162,11 @@ export default function EmployerSearch() {
   };
 
   const unlock = async (jobseekerId: string) => {
+    if (actionsDisabled) {
+      setError("Checkout and unlock actions are disabled in the Spark static build.");
+      setUnlocking(null);
+      return;
+    }
     setUnlocking(jobseekerId);
     setError(null);
     const res = await fetch("/api/checkout", {
@@ -194,6 +200,11 @@ export default function EmployerSearch() {
   }, []);
 
   const startSubscription = async (subscriptionType: "limited" | "unlimited") => {
+    if (actionsDisabled) {
+      setError("Subscriptions are disabled in the Spark static build.");
+      setSubscribing(null);
+      return;
+    }
     setSubscribing(subscriptionType);
     setError(null);
     const res = await fetch("/api/checkout", {
@@ -215,6 +226,11 @@ export default function EmployerSearch() {
   };
 
   const trySubscriptionUnlock = async (jobseekerId: string) => {
+    if (actionsDisabled) {
+      setError("Unlocks are disabled in the Spark static build.");
+      setUnlocking(null);
+      return null;
+    }
     const res = await fetch("/api/unlock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -274,17 +290,22 @@ export default function EmployerSearch() {
           Choose a subscription or pay-per-unlock. Limited plans include a fixed number of unlocks;
           unlimited provides full monthly access.
         </p>
+        {actionsDisabled ? (
+          <p className="mt-2 text-xs text-amber-700">
+            Checkout and unlock actions require server routes and are disabled on the Spark (static) deployment.
+          </p>
+        ) : null}
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             onClick={() => startSubscription("limited")}
-            disabled={subscribing !== null}
+            disabled={actionsDisabled || subscribing !== null}
             className="btn btn-primary"
           >
             {subscribing === "limited" ? "Redirecting..." : "Subscribe (Limited unlocks)"}
           </button>
           <button
             onClick={() => startSubscription("unlimited")}
-            disabled={subscribing !== null}
+            disabled={actionsDisabled || subscribing !== null}
             className="btn btn-secondary"
           >
             {subscribing === "unlimited" ? "Redirecting..." : "Subscribe (Unlimited)"}
@@ -421,7 +442,7 @@ export default function EmployerSearch() {
                         }
                         await unlock(profile.id);
                       }}
-                      disabled={unlocking === profile.id}
+                      disabled={actionsDisabled || unlocking === profile.id}
                       className="btn btn-primary text-xs"
                     >
                       {unlocking === profile.id ? "Unlocking..." : "Unlock contact"}

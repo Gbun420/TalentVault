@@ -1,15 +1,40 @@
-import { requireRole } from "@/lib/auth";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from "react";
+import { getClientSessionProfile } from "@/lib/auth-client";
 
-export default async function EmployerDashboard() {
-  const profile = await requireRole(["employer", "admin"], "/employer");
+export default function EmployerDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      const session = await getClientSessionProfile();
+      if (!session.profile || !["employer", "admin"].includes(session.profile.role)) {
+        setMessage("You must be signed in as an employer to access this page.");
+        setLoading(false);
+        return;
+      }
+      setFullName(session.profile.full_name || "");
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  if (loading) {
+    return <div className="card p-6 text-sm text-slate-600">Loading employer dashboard...</div>;
+  }
+
+  if (message) {
+    return <div className="card p-6 text-sm text-slate-600">{message}</div>;
+  }
 
   return (
     <div className="card p-8">
       <h1 className="text-2xl font-semibold text-slate-900">Employer dashboard</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Welcome, {profile.full_name}. Browse and unlock local Profiles.
+        Welcome, {fullName}. Browse and unlock local Profiles.
       </p>
       <ul className="mt-6 space-y-2 text-sm text-slate-700">
         <li>• Search Profile directory (public and employers-only visibility).</li>
