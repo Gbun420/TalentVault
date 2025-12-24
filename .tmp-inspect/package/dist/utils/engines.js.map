@@ -1,1 +1,0 @@
-{"version":3,"file":"engines.js","sources":["../../src/utils/engines.ts"],"sourcesContent":["export const engines = {\n  node: '>=20.0.0 <=24.x.x',\n  npm: '>=6.0.0',\n};\n"],"names":["engines","node","npm"],"mappings":";;MAAaA,OAAU,GAAA;IACrBC,IAAM,EAAA,mBAAA;IACNC,GAAK,EAAA;AACP;;;;"}
