@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
-import { env } from "@/lib/env";
 import { getClientSessionProfile } from "@/lib/auth-client";
 import AdminModerationBoard from "@/components/admin-moderation-board";
 
@@ -29,18 +27,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<AdminSummary | null>(null);
-  const apiBaseUrl = env.apiBaseUrl ? env.apiBaseUrl.replace(/\/$/, "") : "";
 
   const getErrorMessage = (err: unknown) =>
     err instanceof Error ? err.message : "Something went wrong";
-
-  const requireToken = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("You must be signed in.");
-    }
-    return user.getIdToken();
-  };
 
   useEffect(() => {
     const load = async () => {
@@ -53,15 +42,7 @@ export default function AdminDashboard() {
           setLoading(false);
           return;
         }
-        if (!apiBaseUrl) {
-          setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
-          setLoading(false);
-          return;
-        }
-        const token = await requireToken();
-        const res = await fetch(`${apiBaseUrl}/api/admin/summary`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch("/api/admin/summary");
         const json = await res.json();
         if (!res.ok) {
           setError(json.error || "Failed to load admin data.");
@@ -76,7 +57,7 @@ export default function AdminDashboard() {
       }
     };
     load();
-  }, [apiBaseUrl]);
+  }, []);
 
   if (loading) {
     return <div className="card p-6 text-sm text-slate-600">Loading admin console...</div>;

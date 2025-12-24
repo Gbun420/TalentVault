@@ -6,7 +6,7 @@ import Link from "next/link";
 import { auth, db } from "@/lib/firebase"; // Import auth and db from firebase.ts
 import { AppRole } from "@/lib/auth-constants";
 import { env } from "@/lib/env"; // Import the env object
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, type User } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore"; // For storing roles in Firestore
 
 export default function SignupPage() {
@@ -16,6 +16,18 @@ export default function SignupPage() {
 
   const getErrorMessage = (err: unknown) =>
     err instanceof Error ? err.message : "Something went wrong";
+
+  const establishSession = async (user: User) => {
+    const idToken = await user.getIdToken();
+    const res = await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to start session.");
+    }
+  };
 
   useEffect(() => {
     // E2E Bypass: Immediately redirect to dashboard
@@ -40,6 +52,7 @@ export default function SignupPage() {
       const user = userCredential.user;
 
       if (user) {
+        await establishSession(user);
         // Send email verification
         await sendEmailVerification(user, {
           url: `${env.siteUrl}/auth/callback?role=${encodeURIComponent(role)}&full_name=${encodeURIComponent(full_name)}`,

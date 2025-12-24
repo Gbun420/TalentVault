@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
-import { env } from "@/lib/env";
 import { collection, query, where, orderBy, limit, getDocs, type QueryConstraint } from "firebase/firestore";
 
 type TalentVaultProfile = { // Renamed from CV
@@ -46,19 +45,9 @@ export default function EmployerSearch() {
   const [subscribing, setSubscribing] = useState<"limited" | "unlimited" | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const apiBaseUrl = env.apiBaseUrl ? env.apiBaseUrl.replace(/\/$/, "") : "";
-  const apiAvailable = Boolean(apiBaseUrl);
 
   const getErrorMessage = (err: unknown) =>
     err instanceof Error ? err.message : "Something went wrong";
-
-  const requireToken = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("You must be signed in.");
-    }
-    return user.getIdToken();
-  };
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -171,24 +160,11 @@ export default function EmployerSearch() {
   };
 
   const unlock = async (jobseekerId: string) => {
-    if (!apiAvailable) {
-      setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
-      setUnlocking(null);
-      return;
-    }
     setUnlocking(jobseekerId);
     setError(null);
-    let token = "";
-    try {
-      token = await requireToken();
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setUnlocking(null);
-      return;
-    }
-    const res = await fetch(`${apiBaseUrl}/api/checkout`, {
+    const res = await fetch("/api/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "unlock", jobseekerId }),
     });
     const json = await res.json();
@@ -217,24 +193,11 @@ export default function EmployerSearch() {
   }, []);
 
   const startSubscription = async (subscriptionType: "limited" | "unlimited") => {
-    if (!apiAvailable) {
-      setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
-      setSubscribing(null);
-      return;
-    }
     setSubscribing(subscriptionType);
     setError(null);
-    let token = "";
-    try {
-      token = await requireToken();
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setSubscribing(null);
-      return;
-    }
-    const res = await fetch(`${apiBaseUrl}/api/checkout`, {
+    const res = await fetch("/api/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "subscription", subscriptionType }),
     });
     const json = await res.json();
@@ -251,22 +214,9 @@ export default function EmployerSearch() {
   };
 
   const trySubscriptionUnlock = async (jobseekerId: string) => {
-    if (!apiAvailable) {
-      setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
-      setUnlocking(null);
-      return null;
-    }
-    let token = "";
-    try {
-      token = await requireToken();
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setUnlocking(null);
-      return null;
-    }
-    const res = await fetch(`${apiBaseUrl}/api/unlock`, {
+    const res = await fetch("/api/unlock", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jobseekerId }),
     });
     const json = await res.json();
@@ -323,22 +273,17 @@ export default function EmployerSearch() {
           Choose a subscription or pay-per-unlock. Limited plans include a fixed number of unlocks;
           unlimited provides full monthly access.
         </p>
-        {!apiAvailable ? (
-          <p className="mt-2 text-xs text-amber-700">
-            Checkout and unlock require the API service. Set NEXT_PUBLIC_API_BASE_URL for this deployment.
-          </p>
-        ) : null}
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             onClick={() => startSubscription("limited")}
-            disabled={!apiAvailable || subscribing !== null}
+            disabled={subscribing !== null}
             className="btn btn-primary"
           >
             {subscribing === "limited" ? "Redirecting..." : "Subscribe (Limited unlocks)"}
           </button>
           <button
             onClick={() => startSubscription("unlimited")}
-            disabled={!apiAvailable || subscribing !== null}
+            disabled={subscribing !== null}
             className="btn btn-secondary"
           >
             {subscribing === "unlimited" ? "Redirecting..." : "Subscribe (Unlimited)"}
@@ -475,7 +420,7 @@ export default function EmployerSearch() {
                         }
                         await unlock(profile.id);
                       }}
-                      disabled={!apiAvailable || unlocking === profile.id}
+                      disabled={unlocking === profile.id}
                       className="btn btn-primary text-xs"
                     >
                       {unlocking === profile.id ? "Unlocking..." : "Unlock contact"}

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase";
-import { env } from "@/lib/env";
 
 type Profile = {
   id: string;
@@ -24,38 +22,13 @@ export default function AdminModerationBoard({ profiles }: Props) {
   const [items, setItems] = useState(profiles);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const apiBaseUrl = env.apiBaseUrl ? env.apiBaseUrl.replace(/\/$/, "") : "";
-  const apiAvailable = Boolean(apiBaseUrl);
-
-  const getErrorMessage = (err: unknown) =>
-    err instanceof Error ? err.message : "Something went wrong";
-
-  const requireToken = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("You must be signed in.");
-    }
-    return user.getIdToken();
-  };
 
   const mutate = async (id: string, action: "flag" | "unflag" | "hide" | "unhide") => {
-    if (!apiAvailable) {
-      setError("API is not configured. Set NEXT_PUBLIC_API_BASE_URL.");
-      return;
-    }
     setLoadingId(id);
     setError(null);
-    let token = "";
-    try {
-      token = await requireToken();
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setLoadingId(null);
-      return;
-    }
-    const res = await fetch(`${apiBaseUrl}/api/admin/moderate`, {
+    const res = await fetch("/api/admin/moderate", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jobseekerId: id, action }),
     });
     const json = await res.json();
@@ -87,11 +60,6 @@ export default function AdminModerationBoard({ profiles }: Props) {
           directory.
         </p>
       </div>
-      {!apiAvailable ? (
-        <p className="mt-2 text-xs text-amber-700">
-          Moderation actions require the API service. Set NEXT_PUBLIC_API_BASE_URL for this deployment.
-        </p>
-      ) : null}
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {items.map((profile) => (
@@ -126,28 +94,28 @@ export default function AdminModerationBoard({ profiles }: Props) {
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
               <button
                 onClick={() => mutate(profile.id, "flag")}
-                disabled={!apiAvailable || loadingId === profile.id}
+                disabled={loadingId === profile.id}
                 className="btn btn-secondary text-xs"
               >
                 Flag
               </button>
               <button
                 onClick={() => mutate(profile.id, "unflag")}
-                disabled={!apiAvailable || loadingId === profile.id}
+                disabled={loadingId === profile.id}
                 className="btn btn-secondary text-xs"
               >
                 Unflag
               </button>
               <button
                 onClick={() => mutate(profile.id, "hide")}
-                disabled={!apiAvailable || loadingId === profile.id}
+                disabled={loadingId === profile.id}
                 className="btn btn-destructive text-xs"
               >
                 Hide (suspend)
               </button>
               <button
                 onClick={() => mutate(profile.id, "unhide")}
-                disabled={!apiAvailable || loadingId === profile.id}
+                disabled={loadingId === profile.id}
                 className="btn btn-secondary text-xs"
               >
                 Unhide

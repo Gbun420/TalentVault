@@ -11,6 +11,7 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
+  type User,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; // For fetching roles from Firestore
 
@@ -27,6 +28,18 @@ function LoginForm() {
 
   const getErrorMessage = (err: unknown) =>
     err instanceof Error ? err.message : "Something went wrong";
+
+  const establishSession = async (user: User) => {
+    const idToken = await user.getIdToken();
+    const res = await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to start session.");
+    }
+  };
 
   const handleRedirect = useCallback(async (userId: string) => {
     console.log('handleRedirect called with userId:', userId);
@@ -66,9 +79,10 @@ function LoginForm() {
       }
       if (email) {
         signInWithEmailLink(auth, email, window.location.href)
-          .then((result) => {
+          .then(async (result) => {
             window.localStorage.removeItem("emailForSignIn");
             if (result.user) {
+              await establishSession(result.user);
               handleRedirect(result.user.uid);
             }
           })
@@ -110,8 +124,9 @@ function LoginForm() {
 
     // Regular password login
     signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
+      .then(async (userCredential) => {
         if (userCredential.user) {
+          await establishSession(userCredential.user);
           handleRedirect(userCredential.user.uid);
         }
       })
