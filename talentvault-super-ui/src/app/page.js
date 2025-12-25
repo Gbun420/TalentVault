@@ -68,6 +68,27 @@ const steps = [
   },
 ];
 
+const portalCards = [
+  {
+    key: 'employer',
+    title: 'Employer portal',
+    description:
+      'Run requisitions, manage pipelines, and collaborate with hiring managers in one command view.',
+    highlights: ['Role intake + approvals', 'Pipeline drag-and-drop', 'Hiring analytics'],
+    signIn: '/login?portal=employer&next=/hq',
+    register: '/register?portal=employer&next=/hq',
+  },
+  {
+    key: 'jobseeker',
+    title: 'Job seeker portal',
+    description:
+      'Track applications, manage your profile, and stay in sync with every active opportunity.',
+    highlights: ['Profile management', 'Application tracking', 'Interview readiness'],
+    signIn: '/login?portal=jobseeker&next=/hq',
+    register: '/register?portal=jobseeker&next=/hq',
+  },
+];
+
 const proofPoints = [
   'Shortlist delivery down from weeks to days.',
   'Pipeline visibility across hiring partners and founders.',
@@ -92,6 +113,7 @@ export default function LandingPage() {
             <a className="hover:text-slate-900" href="#platform">Platform</a>
             <a className="hover:text-slate-900" href="#product">Product</a>
             <a className="hover:text-slate-900" href="#method">Method</a>
+            <a className="hover:text-slate-900" href="#portals">Portals</a>
             <a className="hover:text-slate-900" href="#security">Security</a>
           </nav>
           <div className="flex items-center gap-3">
@@ -251,6 +273,53 @@ export default function LandingPage() {
                     <div className="text-lg font-semibold text-slate-900">{step.title}</div>
                     <p className="mt-2 text-sm text-slate-600">{step.detail}</p>
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="portals" className="grid gap-10">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Portals</p>
+              <h2 className="text-3xl font-semibold text-slate-900">
+                Separate experiences for employers and job seekers.
+              </h2>
+            </div>
+            <a href="#contact" className="text-sm font-semibold text-slate-700 hover:text-slate-900">
+              Need onboarding help?
+            </a>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            {portalCards.map((portal) => (
+              <div
+                key={portal.key}
+                className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
+              >
+                <h3 className="text-xl font-semibold text-slate-900">{portal.title}</h3>
+                <p className="mt-3 text-sm text-slate-600">{portal.description}</p>
+                <ul className="mt-4 space-y-2 text-sm text-slate-500">
+                  {portal.highlights.map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-amber-400" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href={portal.signIn}
+                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href={portal.register}
+                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-900"
+                  >
+                    Register
+                  </Link>
                 </div>
               </div>
             ))}

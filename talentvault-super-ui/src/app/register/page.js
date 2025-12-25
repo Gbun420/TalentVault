@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-function LoginForm() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portal = searchParams.get('portal') || 'employer';
@@ -14,9 +14,10 @@ function LoginForm() {
   const portalLabel = portal === 'jobseeker' ? 'Job Seeker' : 'Employer';
   const portalCopy =
     portal === 'jobseeker'
-      ? 'Track applications, update your profile, and stay in sync with opportunities.'
-      : 'Manage roles, pipelines, and hiring alignment for your team.';
-  const [identifier, setIdentifier] = useState('');
+      ? 'Create your profile to track applications and hiring updates.'
+      : 'Create a workspace to manage roles, pipelines, and hiring teams.';
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -27,21 +28,21 @@ function LoginForm() {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ name: fullName, email, password }),
       });
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error || 'Login failed. Check your credentials.');
+        throw new Error(payload?.error || 'Registration failed.');
       }
 
       router.push(nextPath);
       router.refresh();
     } catch (err) {
-      setError(err.message || 'Login failed.');
+      setError(err.message || 'Registration failed.');
     } finally {
       setSubmitting(false);
     }
@@ -56,26 +57,35 @@ function LoginForm() {
         <div className="grid gap-10 rounded-[32px] border border-slate-200 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.12)] lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-4">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500">{portalLabel} portal</p>
-            <h1 className="font-display text-3xl text-slate-900">Sign in to your workspace.</h1>
+            <h1 className="font-display text-3xl text-slate-900">Create your account.</h1>
             <p className="text-sm text-slate-600">{portalCopy}</p>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
-              New here?{' '}
+              Already have an account?{' '}
               <Link
-                href={`/register?portal=${portal}&next=${encodeURIComponent(nextPath)}`}
+                href={`/login?portal=${portal}&next=${encodeURIComponent(nextPath)}`}
                 className="font-semibold text-slate-700"
               >
-                Create your account
+                Sign in
               </Link>
               .
             </div>
           </div>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Full name</label>
+              <Input
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                placeholder="Your name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Email</label>
               <Input
                 type="email"
-                value={identifier}
-                onChange={(event) => setIdentifier(event.target.value)}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@talentvault.com"
                 required
               />
@@ -86,13 +96,13 @@ function LoginForm() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter your password"
+                placeholder="Create a password"
                 required
               />
             </div>
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? 'Signing in...' : 'Sign in'}
+              {submitting ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
         </div>
@@ -101,10 +111,10 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen px-6 py-16">Loading sign-in...</div>}>
-      <LoginForm />
+    <Suspense fallback={<div className="min-h-screen px-6 py-16">Loading registration...</div>}>
+      <RegisterForm />
     </Suspense>
   );
 }
