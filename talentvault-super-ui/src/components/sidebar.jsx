@@ -9,7 +9,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="relative hidden h-screen w-64 flex-col border-r border-black/10 bg-sidebar text-sidebar-foreground lg:flex">
+    <aside className="relative sticky top-0 hidden h-screen w-64 flex-col border-r border-black/10 bg-sidebar text-sidebar-foreground lg:flex">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(247,198,106,0.35),_transparent_55%)] opacity-70" />
       <div className="relative z-10 flex h-full flex-col gap-6">
         <div className="flex items-center gap-3 px-6 pt-8">

@@ -13,7 +13,7 @@
     },
     "currency": {
       "type": "string",
-      "default": "USD"
+      "default": "EUR"
     },
     "period": {
       "type": "enumeration",

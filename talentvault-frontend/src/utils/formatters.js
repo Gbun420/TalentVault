@@ -25,8 +25,10 @@ export const formatEnum = (value) => {
 
 export const formatSalary = (range) => {
   if (!range || (!range.min && !range.max)) return 'Salary TBD';
-  const min = range.min ? `$${Number(range.min).toLocaleString()}` : '';
-  const max = range.max ? `$${Number(range.max).toLocaleString()}` : '';
+  const currency = (range.currency || 'EUR').toUpperCase();
+  const formatMoney = (value) => `${currency} ${Number(value).toLocaleString()}`;
+  const min = range.min ? formatMoney(range.min) : '';
+  const max = range.max ? formatMoney(range.max) : '';
   const spacer = min && max ? ' - ' : '';
   const period = range.period ? ` / ${range.period}` : '';
   return `${min}${spacer}${max}${period}`.trim();
