@@ -7,7 +7,7 @@ import {
   Settings,
 } from 'lucide-react';
 
-export const navItems = [
+export const employerNavItems = [
   {
     href: '/hq',
     label: 'Overview',
@@ -40,6 +40,22 @@ export const navItems = [
   },
 ];
 
+export const jobSeekerNavItems = [
+  {
+    href: '/talent',
+    label: 'My Dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    href: '/settings',
+    label: 'Settings',
+    icon: Settings,
+  },
+];
+
+export const getNavItems = (portal) =>
+  portal === 'jobseeker' ? jobSeekerNavItems : employerNavItems;
+
 const pageMeta = {
   '/hq': {
     title: 'TalentVault HQ',
@@ -64,6 +80,10 @@ const pageMeta = {
   '/settings': {
     title: 'Vault Controls',
     description: 'Workspace rules, integrations, and guardrails.',
+  },
+  '/talent': {
+    title: 'My Talent Hub',
+    description: 'Track applications, interviews, and profile readiness.',
   },
 };
 

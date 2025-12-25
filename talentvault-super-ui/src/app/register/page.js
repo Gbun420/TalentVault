@@ -10,7 +10,8 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portal = searchParams.get('portal') || 'employer';
-  const nextPath = searchParams.get('next') || '/hq';
+  const defaultNext = portal === 'jobseeker' ? '/talent' : '/hq';
+  const nextPath = searchParams.get('next') || defaultNext;
   const portalLabel = portal === 'jobseeker' ? 'Job Seeker' : 'Employer';
   const portalCopy =
     portal === 'jobseeker'
@@ -22,6 +23,16 @@ function RegisterForm() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const resolveNextPath = (path, userPortal) => {
+    const portalHome = userPortal === 'jobseeker' ? '/talent' : '/hq';
+    const allowedRoutes =
+      userPortal === 'jobseeker'
+        ? ['/talent', '/settings']
+        : ['/hq', '/jobs', '/companies', '/candidates', '/analytics', '/settings'];
+
+    return allowedRoutes.some((route) => path.startsWith(route)) ? path : portalHome;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -31,15 +42,17 @@ function RegisterForm() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: fullName, email, password }),
+        body: JSON.stringify({ name: fullName, email, password, portal }),
       });
 
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
         throw new Error(payload?.error || 'Registration failed.');
       }
 
-      router.push(nextPath);
+      const userPortal = payload?.portal || payload?.user?.portal || portal;
+      const normalizedPortal = userPortal === 'jobseeker' ? 'jobseeker' : 'employer';
+      router.push(resolveNextPath(nextPath, normalizedPortal));
       router.refresh();
     } catch (err) {
       setError(err.message || 'Registration failed.');

@@ -11,12 +11,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { navItems, resolvePageMeta } from '@/lib/navigation';
+import { getNavItems, resolvePageMeta } from '@/lib/navigation';
 
-export default function Topbar() {
+export default function Topbar({ portal }) {
   const pathname = usePathname();
   const router = useRouter();
   const meta = resolvePageMeta(pathname);
+  const navItems = getNavItems(portal);
 
   const handleSignOut = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });

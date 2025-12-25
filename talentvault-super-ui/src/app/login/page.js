@@ -10,7 +10,8 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const portal = searchParams.get('portal') || 'employer';
-  const nextPath = searchParams.get('next') || '/hq';
+  const defaultNext = portal === 'jobseeker' ? '/talent' : '/hq';
+  const nextPath = searchParams.get('next') || defaultNext;
   const portalLabel = portal === 'jobseeker' ? 'Job Seeker' : 'Employer';
   const portalCopy =
     portal === 'jobseeker'
@@ -21,6 +22,16 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const resolveNextPath = (path, userPortal) => {
+    const portalHome = userPortal === 'jobseeker' ? '/talent' : '/hq';
+    const allowedRoutes =
+      userPortal === 'jobseeker'
+        ? ['/talent', '/settings']
+        : ['/hq', '/jobs', '/companies', '/candidates', '/analytics', '/settings'];
+
+    return allowedRoutes.some((route) => path.startsWith(route)) ? path : portalHome;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -30,15 +41,17 @@ function LoginForm() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier, password, portal }),
       });
 
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
         throw new Error(payload?.error || 'Login failed. Check your credentials.');
       }
 
-      router.push(nextPath);
+      const userPortal = payload?.portal || payload?.user?.portal || portal;
+      const normalizedPortal = userPortal === 'jobseeker' ? 'jobseeker' : 'employer';
+      router.push(resolveNextPath(nextPath, normalizedPortal));
       router.refresh();
     } catch (err) {
       setError(err.message || 'Login failed.');

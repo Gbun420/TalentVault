@@ -84,8 +84,8 @@ const portalCards = [
     description:
       'Track applications, manage your profile, and stay in sync with every active opportunity.',
     highlights: ['Profile management', 'Application tracking', 'Interview readiness'],
-    signIn: '/login?portal=jobseeker&next=/hq',
-    register: '/register?portal=jobseeker&next=/hq',
+    signIn: '/login?portal=jobseeker&next=/talent',
+    register: '/register?portal=jobseeker&next=/talent',
   },
 ];
 

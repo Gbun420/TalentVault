@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { navItems } from '@/lib/navigation';
+import { getNavItems } from '@/lib/navigation';
 
-export default function Sidebar() {
+export default function Sidebar({ portal }) {
   const pathname = usePathname();
+  const navItems = getNavItems(portal);
 
   return (
     <aside className="relative sticky top-0 hidden h-screen w-64 flex-col border-r border-black/10 bg-sidebar text-sidebar-foreground lg:flex">
@@ -19,7 +20,7 @@ export default function Sidebar() {
           <div>
             <div className="text-lg font-semibold">TalentVault</div>
             <div className="text-xs uppercase tracking-[0.25em] text-sidebar-foreground/50">
-              Command
+              {portal === 'jobseeker' ? 'Talent' : 'Command'}
             </div>
           </div>
         </div>
@@ -47,7 +48,9 @@ export default function Sidebar() {
         <div className="px-6 pb-8">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-sidebar-foreground/70">
             <div className="mb-2 text-sm font-semibold text-white">Vault status</div>
-            Live sync enabled across 3 regions.
+            {portal === 'jobseeker'
+              ? 'Profile sync enabled. Keep your details current.'
+              : 'Live sync enabled across 3 regions.'}
           </div>
         </div>
       </div>
