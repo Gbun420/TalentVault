@@ -216,9 +216,14 @@ export default async function JobsPage() {
                   <TableCell>{formatDate(job.postedAt)}</TableCell>
                   <TableCell>{formatSalary(job.salaryRange)}</TableCell>
                   <TableCell className="text-right">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/jobs/${job.id}`}>Edit</Link>
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/jobs/${job.id}`}>Edit</Link>
+                      </Button>
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={`/jobs/${job.id}/pipeline`}>Pipeline</Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
