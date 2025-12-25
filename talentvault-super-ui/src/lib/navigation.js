@@ -8,7 +8,7 @@ import {
 
 export const navItems = [
   {
-    href: '/',
+    href: '/hq',
     label: 'Overview',
     icon: LayoutDashboard,
   },
@@ -35,7 +35,7 @@ export const navItems = [
 ];
 
 const pageMeta = {
-  '/': {
+  '/hq': {
     title: 'TalentVault HQ',
     description: 'Daily signal on hiring momentum and pipeline health.',
   },
