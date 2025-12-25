@@ -28,7 +28,7 @@ export default {
       throw new ValidationError('candidateId and jobId are required.');
     }
 
-    const candidate = await strapi.entityService.findOne(
+    const candidate = (await strapi.entityService.findOne(
       'api::candidate-profile.candidate-profile',
       candidateId,
       {
@@ -36,7 +36,7 @@ export default {
           resume: true,
         },
       }
-    );
+    )) as any;
 
     if (!candidate) {
       ctx.notFound('Candidate profile not found.');
@@ -50,7 +50,8 @@ export default {
       return;
     }
 
-    const resumeFile = Array.isArray(candidate.resume) ? candidate.resume[0] : candidate.resume;
+    const resumeField = candidate?.resume;
+    const resumeFile = Array.isArray(resumeField) ? resumeField[0] : resumeField;
     if (!resumeFile) {
       throw new ValidationError('Candidate profile does not have a resume file uploaded.');
     }
