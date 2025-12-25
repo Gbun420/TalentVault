@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlowCard } from '@/components/glow-card';
 import { formatDate, formatEnum, formatLocation } from '@/lib/formatters';
-import { getCandidates, getJobs, getStats } from '@/lib/strapi-client';
+import { getCandidates, getJobs, getStats } from '@/lib/strapi-server';
 
 export const revalidate = 60;
 

@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatEnum, formatLocation } from '@/lib/formatters';
-import { getCandidates } from '@/lib/strapi-client';
+import { getCandidates } from '@/lib/strapi-server';
 
 export const revalidate = 60;
 
@@ -121,6 +123,16 @@ export default async function CandidatesPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Pipeline overview</h2>
+          <p className="text-sm text-slate-500">Add new talent and track readiness.</p>
+        </div>
+        <Button asChild size="sm">
+          <Link href="/candidates/new">Add candidate</Link>
+        </Button>
+      </div>
+
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-black/10 bg-white/70">
           <CardHeader>
@@ -203,6 +215,11 @@ export default async function CandidatesPage() {
                       style={{ width: `${Math.min(candidate.resumeScore, 100)}%` }}
                     />
                   </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/candidates/${candidate.id}`}>Edit profile</Link>
+                  </Button>
                 </div>
               </div>
             ))}

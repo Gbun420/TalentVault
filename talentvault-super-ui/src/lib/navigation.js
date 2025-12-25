@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Briefcase,
+  Building2,
   Users,
   LineChart,
   Settings,
@@ -16,6 +17,11 @@ export const navItems = [
     href: '/jobs',
     label: 'Jobs',
     icon: Briefcase,
+  },
+  {
+    href: '/companies',
+    label: 'Companies',
+    icon: Building2,
   },
   {
     href: '/candidates',
@@ -42,6 +48,10 @@ const pageMeta = {
   '/jobs': {
     title: 'Roles in Motion',
     description: 'Open roles, hiring velocity, and role readiness.',
+  },
+  '/companies': {
+    title: 'Company Ledger',
+    description: 'Hiring partners, account health, and engagement context.',
   },
   '/candidates': {
     title: 'Talent Flow',

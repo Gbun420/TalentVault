@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowUpRight, Globe2, Sparkles, ShieldCheck } from 'lucide-react';
+import LeadForm from '@/components/lead-form';
 
 const metrics = [
   { label: 'Avg. time to shortlist', value: '5 days' },

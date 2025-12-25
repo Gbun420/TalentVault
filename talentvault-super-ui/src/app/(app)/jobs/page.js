@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -9,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDate, formatEnum, formatLocation, formatSalary } from '@/lib/formatters';
-import { getJobs } from '@/lib/strapi-client';
+import { getJobs } from '@/lib/strapi-server';
 
 export const revalidate = 60;
 
@@ -168,8 +170,14 @@ export default async function JobsPage() {
       </section>
 
       <Card className="border-black/10 bg-white/80">
-        <CardHeader>
-          <CardTitle className="text-lg">Roles pipeline</CardTitle>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-lg">Roles pipeline</CardTitle>
+            <p className="text-sm text-slate-500">Create, review, and update active roles.</p>
+          </div>
+          <Button asChild size="sm">
+            <Link href="/jobs/new">New role</Link>
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -182,6 +190,7 @@ export default async function JobsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead>Posted</TableHead>
                 <TableHead>Salary</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -206,6 +215,11 @@ export default async function JobsPage() {
                   </TableCell>
                   <TableCell>{formatDate(job.postedAt)}</TableCell>
                   <TableCell>{formatSalary(job.salaryRange)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/jobs/${job.id}`}>Edit</Link>
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
